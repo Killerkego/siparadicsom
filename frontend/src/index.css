@@ -106,3 +106,187 @@ body {
   background: #9fb0bd;
   cursor: default;
 }
+
+.game-panel .game-code {
+  padding-top: 6px;
+  border-top: 1px solid #dde5ec;
+}
+
+.game-panel button.leave {
+  padding: 2px 8px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+/* kezdőlap és lobbi: egyszerű kártya a havas háttéren */
+.page {
+  box-sizing: border-box;
+  height: 100%;
+  padding: 8vh 16px 24px;
+  background: linear-gradient(#cfe2f0, #f4f8fb);
+  overflow-y: auto;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 380px;
+  margin: 0 auto;
+  padding: 28px;
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 8px 28px rgba(31, 42, 51, 0.15);
+}
+
+.card h1 {
+  margin: 0 0 4px;
+  text-align: center;
+  font-size: 28px;
+  font-weight: 800;
+  color: #2b4a63;
+}
+
+.card h2 {
+  margin: 8px 0 0;
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.card input {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #c9d6e0;
+  border-radius: 10px;
+  font: inherit;
+  font-size: 16px;
+}
+
+.card input:focus {
+  outline: 2px solid #2b4a63;
+  outline-offset: -1px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-weight: 700;
+}
+
+.btn {
+  padding: 11px 14px;
+  border: none;
+  border-radius: 10px;
+  background: #2b4a63;
+  color: #ffffff;
+  font: inherit;
+  font-size: 16px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.btn.secondary {
+  background: #e8eef3;
+  color: #2b4a63;
+}
+
+.btn:disabled {
+  background: #c3ced7;
+  color: #ffffff;
+  cursor: default;
+}
+
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #7a8a97;
+  font-size: 13px;
+}
+
+.divider::before,
+.divider::after {
+  content: '';
+  flex: 1;
+  border-top: 1px solid #dde5ec;
+}
+
+.join {
+  display: flex;
+  gap: 8px;
+}
+
+.join .code-input {
+  flex: 1;
+  min-width: 0;
+  text-align: center;
+  font-weight: 800;
+  letter-spacing: 4px;
+}
+
+.code-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 14px;
+  border-radius: 12px;
+  background: #eef4f8;
+}
+
+.code-box span {
+  color: #7a8a97;
+  font-size: 13px;
+}
+
+.code-box strong {
+  font-size: 32px;
+  font-weight: 800;
+  letter-spacing: 6px;
+  color: #2b4a63;
+}
+
+.players {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.players li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0;
+  border-bottom: 1px solid #eef2f5;
+  font-weight: 700;
+}
+
+.badge {
+  padding: 1px 8px;
+  border-radius: 10px;
+  background: #e8eef3;
+  color: #52626f;
+  font-size: 12px;
+}
+
+.badge.me {
+  background: #2b4a63;
+  color: #ffffff;
+}
+
+.hint,
+.muted {
+  margin: 0;
+  color: #7a8a97;
+  font-size: 14px;
+}
+
+.muted {
+  font-weight: 600;
+}
+
+.card .error {
+  margin: 0;
+  color: #c62828;
+}
