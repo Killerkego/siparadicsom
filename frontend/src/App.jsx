@@ -3,6 +3,8 @@ import { Canvas } from '@react-three/fiber';
 import Board from './board/Board';
 import FixedCamera from './board/FixedCamera';
 import Scenery from './scenery/Scenery';
+import Dice from './game/Dice';
+import Pawn from './game/Pawn';
 import { FIELD_TYPES, SPECIAL_TYPES, countByType } from './board/fieldTypes';
 import boardData from './data/board.json';
 
@@ -20,6 +22,15 @@ function useFontsReady() {
   return ready;
 }
 
+function FieldName({ field }) {
+  return (
+    <>
+      <b>#{field.id}</b> {FIELD_TYPES[field.type].label}
+      {field.special && ` – ${SPECIAL_TYPES[field.special]}`}
+    </>
+  );
+}
+
 function Legend({ hovered }) {
   return (
     <div className="legend">
@@ -32,15 +43,22 @@ function Legend({ hovered }) {
           </li>
         ))}
       </ul>
-      <div className="hovered">
-        {hovered ? (
-          <>
-            <b>#{hovered.id}</b> {FIELD_TYPES[hovered.type].label}
-            {hovered.special && ` – ${SPECIAL_TYPES[hovered.special]}`}
-          </>
-        ) : (
-          'Vidd az egeret egy mezőre'
-        )}
+      <div className="hovered">{hovered ? <FieldName field={hovered} /> : 'Vidd az egeret egy mezőre'}</div>
+    </div>
+  );
+}
+
+function GamePanel({ phase, roll, pawnField, onRoll }) {
+  return (
+    <div className="game-panel">
+      <button onClick={onRoll} disabled={phase !== 'idle'}>
+        {phase === 'rolling' ? 'Gurul…' : phase === 'moving' ? 'Lép…' : 'Dobás'}
+      </button>
+      <div>
+        Dobott szám: <b>{roll && phase !== 'rolling' ? roll.value : '–'}</b>
+      </div>
+      <div>
+        Bábu: {phase === 'idle' ? <FieldName field={fields[pawnField]} /> : '…'}
       </div>
     </div>
   );
@@ -50,12 +68,26 @@ export default function App() {
   const [hovered, setHovered] = useState(null);
   const fontsReady = useFontsReady();
 
+  // idle -> rolling (kocka gurul) -> moving (bábu lép) -> idle
+  const [phase, setPhase] = useState('idle');
+  const [roll, setRoll] = useState(null);
+  const [pawnField, setPawnField] = useState(0);
+  // a mező, amelyen a bábu épp áll lépés közben; ehhez fordul a kamera
+  const [pawnAt, setPawnAt] = useState(0);
+
+  const rollDice = () => {
+    if (phase !== 'idle') return;
+    // később a Python backend adhatja a dobás eredményét
+    setRoll({ value: 1 + Math.floor(Math.random() * 6), id: Date.now() });
+    setPhase('rolling');
+  };
+
   return (
     <>
       <Canvas shadows="percentage" flat dpr={[1, 2]} camera={{ fov: 40, near: 0.5, far: 200 }}>
         <color attach="background" args={['#cfe2f0']} />
         <fog attach="fog" args={['#cfe2f0', 45, 110]} />
-        <FixedCamera />
+        <FixedCamera side={Math.floor(pawnAt / 10)} />
         <hemisphereLight args={['#eaf4ff', '#b9c7d4', 0.75]} />
         <directionalLight
           position={[-9, 18, 10]}
@@ -75,8 +107,24 @@ export default function App() {
           <Scenery />
         </Suspense>
         {fontsReady && <Board fields={fields} onHover={setHovered} />}
+        <Dice
+          roll={roll}
+          disabled={phase !== 'idle'}
+          onClick={rollDice}
+          onRolled={(value) => {
+            setPhase('moving');
+            setPawnField((f) => (f + value) % fields.length);
+          }}
+        />
+        <Pawn
+          field={pawnField}
+          lifted={phase === 'idle' && hovered?.id === pawnField}
+          onStep={setPawnAt}
+          onArrived={() => setPhase('idle')}
+        />
       </Canvas>
       <Legend hovered={hovered} />
+      <GamePanel phase={phase} roll={roll} pawnField={pawnField} onRoll={rollDice} />
     </>
   );
 }

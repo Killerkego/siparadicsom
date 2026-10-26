@@ -72,3 +72,37 @@ body {
   border-top: 1px solid #dde5ec;
   color: #52626f;
 }
+
+.game-panel {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 190px;
+  padding: 14px 16px;
+  background: rgba(255, 255, 255, 0.88);
+  border-radius: 14px;
+  box-shadow: 0 6px 24px rgba(31, 42, 51, 0.18);
+  backdrop-filter: blur(6px);
+  font-size: 14px;
+  user-select: none;
+}
+
+.game-panel button {
+  padding: 10px 14px;
+  border: none;
+  border-radius: 10px;
+  background: #2b4a63;
+  color: #fff;
+  font: inherit;
+  font-size: 16px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.game-panel button:disabled {
+  background: #9fb0bd;
+  cursor: default;
+}
