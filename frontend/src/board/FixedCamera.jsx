@@ -11,8 +11,8 @@ const CORNERS = [];
 for (const x of [-HALF, HALF]) for (const z of [-HALF, HALF]) for (const y of [-0.5, 0.4]) CORNERS.push(new THREE.Vector3(x, y, z));
 
 const MAX_W = 1.9; // NDC-ben (a teljes szélesség 2)
-const MAX_H = 1.2; // a fennmaradó rész a háttéré (felvonó, sípálya)
-const BOTTOM = -0.95;
+const MAX_H = 1.45; // a fennmaradó rész a háttéré (felvonó, sípálya)
+const BOTTOM = -0.97;
 
 const tmp = new THREE.Vector3();
 
