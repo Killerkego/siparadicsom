@@ -3,21 +3,20 @@ import { useFrame } from '@react-three/fiber';
 import { useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
 import { TILE_H, tilePlacement } from '../board/layout';
+import { FIGURES } from './figures';
 import { FIELD_COUNT, pawnState } from './timing';
 
 const HOP = 0.45; // ugrás magassága lépésenként
 const JUMP_HOP = 3; // felvonós átugrás ívének magassága
 const LIFT = 0.1; // ennyivel emelkedik a mező, ha fölé visszük az egeret
-const SCALE = 0.65; // kisebb bábuk, hogy hatan is elférjenek egy mezőn
+const SCALE = 0.65; // kisebb bábuk, hogy négyen is elférjenek egy mezőn
 
-// Figurás bábuk fatalpon (Blender: babuk.py). A játékosok csatlakozási sorrendben kapják őket;
-// a talp színes csíkja ('Babu_jelolo') a játékos színe, így két egyforma figura is megkülönböztethető.
+// Figurás bábuk fatalpon (Blender: babuk.py). A figurát a játékos a lobbiban választja;
+// a talp színes csíkja ('Babu_jelolo') a játékos színe.
 const MODEL_URL = '/models/babuk.glb';
-const FIGURES = ['Babu_sielo', 'Babu_snowboard', 'Babu_hoember', 'Babu_kabin'];
-export const FIGURE_NAMES = ['Síelő', 'Snowboardos', 'Hóember', 'Gondola'];
 
 // Minden játékosnak saját helye van a mezőn belül (mező szerinti x, z), így nem fedik egymást.
-const SLOTS = [[-0.23, -0.45], [0.23, -0.45], [-0.23, 0.05], [0.23, 0.05], [-0.23, 0.55], [0.23, 0.55]];
+const SLOTS = [[-0.23, -0.45], [0.23, -0.45], [-0.23, 0.05], [0.23, 0.05]];
 
 function slotPlacements(slot) {
   const [ox, oz] = SLOTS[slot % SLOTS.length];
@@ -36,10 +35,11 @@ function angleLerp(a, b, t) {
   return a + Math.atan2(Math.sin(b - a), Math.cos(b - a)) * t;
 }
 
-function useFigure(slot, color) {
+// a figura saját példánya a játékos színével (a táblán és a lobbi előnézetében)
+export function useFigure(index, color) {
   const { scene } = useGLTF(MODEL_URL);
   const figure = useMemo(() => {
-    const clone = scene.getObjectByName(FIGURES[slot % FIGURES.length]).clone();
+    const clone = scene.getObjectByName(FIGURES[index % FIGURES.length].model).clone();
     clone.position.set(0, 0, 0);
     clone.traverse((o) => {
       if (!o.isMesh) return;
@@ -50,7 +50,7 @@ function useFigure(slot, color) {
       }
     });
     return clone;
-  }, [scene, slot, color]);
+  }, [scene, index, color]);
   useEffect(
     () => () =>
       figure.traverse((o) => {
@@ -64,10 +64,10 @@ function useFigure(slot, color) {
 // A bábu a `field` mezőn áll, arccal a tábla széle (a kamera) felé. Ha `action` is van (a bábu utolsó
 // mozgása, `start` időponttal), akkor a kocka után végigjárja: előre vagy hátra mezőről mezőre ugrál,
 // felvonóval átrepül. A helyzetét mindig az eltelt időből számoljuk, így minden böngészőben ugyanott tart.
-export default function Pawn({ field, action, slot = 0, lifted, color = '#d63031' }) {
+export default function Pawn({ field, action, slot = 0, figure: figureIndex = 0, lifted, color = '#d63031' }) {
   const group = useRef();
   const placements = useMemo(() => slotPlacements(slot), [slot]);
-  const figure = useFigure(slot, color);
+  const figure = useFigure(figureIndex, color);
 
   useFrame(() => {
     const g = group.current;

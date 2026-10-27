@@ -22,6 +22,8 @@ async function request(method, path, body) {
 
 export const createGame = (name) => request('POST', '/games', { name });
 export const joinGame = (code, name) => request('POST', `/games/${code}/join`, { name });
+export const chooseFigure = (code, playerId, figure) =>
+  request('POST', `/games/${code}/figure`, { player_id: playerId, figure });
 export const startGame = (code, playerId) => request('POST', `/games/${code}/start`, { player_id: playerId });
 export const rollDice = (code, playerId) => request('POST', `/games/${code}/roll`, { player_id: playerId });
 export const chooseOption = (code, playerId, choice) =>

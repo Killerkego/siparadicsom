@@ -7,7 +7,8 @@ import Sky, { HORIZON_COLOR } from '../scenery/Sky';
 import BuildSite from './BuildSite';
 import DevPanel from './DevPanel';
 import Dice from './Dice';
-import Pawn, { FIGURE_NAMES } from './Pawn';
+import { FIGURES } from './figures';
+import Pawn from './Pawn';
 import { DICE_TIME, actionEnd, actionStart, shownField } from './timing';
 import { FIELD_TYPES, SPECIAL_TYPES } from '../board/fieldTypes';
 import boardData from '../data/board.json';
@@ -201,7 +202,7 @@ function GamePanel({ game, settled, playerId, fieldOf, phase, busy, action, erro
             <li key={p.id} className={p.id === game.turn_player_id ? 'turn' : ''}>
               <span className="dot" style={{ background: p.color }} />
               <span>
-                {p.name}
+                <span title={FIGURES[p.figure].name}>{FIGURES[p.figure].icon}</span> {p.name}
                 {p.id === playerId && ' (te)'}: <FieldName field={fields[fieldOf(p)]} />
                 <br />
                 <span className={s.money < 0 ? 'money debt' : 'money'}>{hk(s.money)}</span>
@@ -357,6 +358,7 @@ export default function GameScreen({ game, playerId, onRoll, onChoose, onLeave, 
               field={p.position}
               action={action?.player_id === p.id ? action : null}
               slot={i}
+              figure={p.figure}
               color={p.color}
               lifted={phase === 'idle' && hovered?.id === p.position}
             />
@@ -395,8 +397,7 @@ export default function GameScreen({ game, playerId, onRoll, onChoose, onLeave, 
 
 // a játék vége: a győztes, a figurája és a felépült síparadicsom; további lépés már nincs
 function Victory({ game, playerId, onLeave }) {
-  const index = game.players.findIndex((p) => p.id === game.winner_id);
-  const winner = game.players[index];
+  const winner = game.players.find((p) => p.id === game.winner_id);
   if (!winner) return null;
   return (
     <div className="victory">
@@ -404,7 +405,7 @@ function Victory({ game, playerId, onLeave }) {
         <div className="trophy">🏆</div>
         <h2>{winner.id === playerId ? 'Nyertél!' : `${winner.name} nyert!`}</h2>
         <p>
-          <span className="dot" style={{ background: winner.color }} /> {winner.name} · {FIGURE_NAMES[index % FIGURE_NAMES.length]}
+          <span className="dot" style={{ background: winner.color }} /> {winner.name} · {FIGURES[winner.figure].icon} {FIGURES[winner.figure].name}
         </p>
         <p>
           Felépítette a teljes síparadicsomot ({game.buildings.length}/{game.buildings.length}), és {hk(winner.money)}{' '}

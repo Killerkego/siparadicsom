@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import Snowfall from './Snowfall';
 
 // Kezdőlap: új játék létrehozása vagy csatlakozás egy meglévőhöz a kódjával
 export default function HomeScreen({ onCreate, onJoin }) {
@@ -25,6 +26,7 @@ export default function HomeScreen({ onCreate, onJoin }) {
       <div className="home-shell">
         <section className="home-visual" aria-labelledby="home-title">
           <img className="home-landscape" src="/alpine-winter.jpg" alt="" aria-hidden="true" />
+          <Snowfall />
           <div className="home-brand">
             <p className="home-eyebrow"><span aria-hidden="true">✦</span> ALPINE CLUB · AURELIA RESORT <span aria-hidden="true">✦</span></p>
             <h1 id="home-title">Síparadicsom</h1>

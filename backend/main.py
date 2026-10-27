@@ -17,10 +17,11 @@ from pydantic import BaseModel, StringConstraints
 
 MIN_PLAYERS = 1  # tesztelés miatt egyedül is indítható; a kész játékhoz állítsd 2-re
 DEV_MODE = True  # fejlesztői fül a játékban (bárhova lépés, minden épület); a kész játékhoz állítsd False-ra
-MAX_PLAYERS = 6
+MAX_PLAYERS = 4
 CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"  # nincs benne 0/O és 1/I, hogy ne lehessen összekeverni
 CODE_LENGTH = 6
-PAWN_COLORS = ["#d63031", "#0984e3", "#00b894", "#fdcb6e", "#6c5ce7", "#e17055"]
+PAWN_COLORS = ["#d63031", "#0984e3", "#00b894", "#fdcb6e"]
+FIGURE_COUNT = 4  # a bábuk figurái (frontend/src/game/figures.js), mindenkinek más jut
 
 # A tábla mezői ugyanabból a fájlból, amiből a frontend rajzol
 BOARD = json.loads(
@@ -100,6 +101,11 @@ class ChoiceIn(BaseModel):
     choice: str
 
 
+class FigureIn(BaseModel):
+    player_id: str
+    figure: int
+
+
 class DevMoveIn(BaseModel):
     player_id: str
     field: int
@@ -113,12 +119,14 @@ def new_code() -> str:
 
 
 def new_player(game: dict | None, name: str) -> dict:
-    used = {p["color"] for p in game["players"]} if game else set()
-    color = next(c for c in PAWN_COLORS if c not in used)
+    players = game["players"] if game else []
+    color = next(c for c in PAWN_COLORS if c not in {p["color"] for p in players})
+    figure = next(f for f in range(FIGURE_COUNT) if f not in {p["figure"] for p in players})
     return {
         "id": uuid.uuid4().hex,
         "name": name,
         "color": color,
+        "figure": figure,  # az első szabad figura; a lobbiban átválasztható
         "position": 0,
         "money": RULES["start_money"],
         "in_school": False,
@@ -359,6 +367,24 @@ async def join_game(code: str, body: PlayerIn):
 @app.get("/api/games/{code}")
 async def game_state(code: str):
     return public_state(get_game(code))
+
+
+@app.post("/api/games/{code}/figure")
+async def choose_figure(code: str, body: FigureIn):
+    """Bábuválasztás a lobbiban; két játékosnak nem lehet ugyanaz a figurája."""
+    game = get_game(code)
+    if game["status"] != "lobby":
+        raise HTTPException(409, "Bábut csak a játék indítása előtt lehet választani.")
+    player = find_player(game, body.player_id)
+    if player is None:
+        raise HTTPException(404, "Nincs ilyen játékos.")
+    if not 0 <= body.figure < FIGURE_COUNT:
+        raise HTTPException(422, "Nincs ilyen bábu.")
+    if any(p["figure"] == body.figure and p["id"] != player["id"] for p in game["players"]):
+        raise HTTPException(409, "Ezt a bábut már más választotta.")
+    player["figure"] = body.figure
+    await broadcast(game)
+    return public_state(game)
 
 
 @app.post("/api/games/{code}/start")

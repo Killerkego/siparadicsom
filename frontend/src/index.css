@@ -420,6 +420,7 @@ body {
   box-shadow:
     0 30px 80px rgba(97, 77, 43, 0.16),
     0 4px 16px rgba(97, 77, 43, 0.08);
+  animation: home-rise 900ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
 }
 
 .home-visual {
@@ -443,6 +444,17 @@ body {
   height: 100%;
   object-fit: cover;
   object-position: center 54%;
+  pointer-events: none;
+  transform-origin: 60% 40%;
+  animation: home-drift 40s ease-in-out infinite alternate;
+}
+
+.home-snow {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
   pointer-events: none;
 }
 
@@ -472,6 +484,7 @@ body {
   background: rgba(31, 35, 38, 0.53);
   box-shadow: 0 14px 36px rgba(20, 23, 24, 0.16);
   backdrop-filter: blur(7px);
+  animation: home-slide-in 1s 250ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
 }
 
 .home-eyebrow,
@@ -500,7 +513,17 @@ body {
   font-weight: 400;
   letter-spacing: 0;
   line-height: 1.1;
-  text-shadow: 0 3px 16px rgba(0, 0, 0, 0.32);
+  /* arany csillanás fut végig a feliraton; a padding, hogy a kézírás kacskaringói is kapjanak színt */
+  padding: 0 0.3em 0.45em 0.2em;
+  margin-right: -0.3em;
+  margin-bottom: -0.45em;
+  margin-left: -0.2em;
+  background: linear-gradient(110deg, #e7c783 42%, #fff4d6 50%, #e7c783 58%) 100% 0 / 260% 100% no-repeat;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 3px 8px rgba(0, 0, 0, 0.3));
+  animation: home-shimmer 7s 1.4s ease-in-out infinite;
 }
 
 .home-tagline {
@@ -516,13 +539,18 @@ body {
   padding: 7px 16px 9px;
   border: 1px solid rgba(226, 196, 137, 0.62);
   border-radius: 999px;
-  background: rgba(31, 35, 38, 0.53);
+  /* nincs backdrop-filter: lebegés közben minden képkockán újra kellene mosni a mozgó kép és a hó
+     mögötte lévő részét, és ettől akadt. Helyette kicsit sötétebb háttér. */
+  background: rgba(31, 35, 38, 0.66);
   box-shadow: 0 4px 16px rgba(20, 23, 24, 0.16);
   color: #f0d7a2;
   font-family: 'Parisienne', 'Cormorant Garamond', cursive;
   font-size: 26px;
   font-weight: 400;
-  backdrop-filter: blur(7px);
+  will-change: transform;
+  animation:
+    home-fade-up 900ms 800ms cubic-bezier(0.2, 0.7, 0.2, 1) both,
+    home-float 6s 1.7s ease-in-out infinite;
 }
 
 .home-card {
@@ -535,6 +563,70 @@ body {
   border-radius: 0;
   background: #fffdf9;
   box-shadow: none;
+}
+
+/* az űrlap elemei egymás után úsznak be */
+.home-card > * {
+  animation: home-fade-up 700ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+.home-card > :nth-child(1) { animation-delay: 350ms; }
+.home-card > :nth-child(2) { animation-delay: 450ms; }
+.home-card > :nth-child(3) { animation-delay: 550ms; }
+.home-card > :nth-child(4) { animation-delay: 650ms; }
+.home-card > :nth-child(5) { animation-delay: 750ms; }
+.home-card > :nth-child(6) { animation-delay: 850ms; }
+
+@keyframes home-rise {
+  from {
+    opacity: 0;
+    transform: translateY(24px) scale(0.985);
+  }
+}
+
+@keyframes home-drift {
+  from {
+    transform: scale(1.04);
+  }
+  to {
+    transform: scale(1.14) translate(-1.5%, 1%);
+  }
+}
+
+@keyframes home-slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(-28px);
+    filter: blur(4px);
+  }
+}
+
+@keyframes home-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+}
+
+/* translate3d: a felirat saját rétegen mozog, így nem ugrál pixelről pixelre */
+@keyframes home-float {
+  from,
+  to {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(0, -5px, 0);
+  }
+}
+
+@keyframes home-shimmer {
+  0% {
+    background-position: 100% 0;
+  }
+  35%,
+  100% {
+    background-position: 0 0;
+  }
 }
 
 .home-form-heading {
@@ -659,11 +751,30 @@ body {
   box-shadow: 0 18px 48px rgba(97, 77, 43, 0.15);
 }
 
+.lobby-heading {
+  text-align: center;
+}
+
+.lobby-eyebrow {
+  margin: 0;
+  color: #a17b3d;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 2.6px;
+}
+
+.lobby-eyebrow span {
+  color: #c19b58;
+}
+
 .lobby-card h1 {
-  color: #a77f3d;
-  font-family: 'Parisienne', 'Cormorant Garamond', cursive;
-  font-size: 46px;
-  font-weight: 400;
+  margin: 8px 0 0;
+  color: #987039;
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 32px;
+  font-weight: 600;
+  letter-spacing: -0.3px;
+  line-height: 1.1;
 }
 
 .lobby-card h2 {
@@ -686,9 +797,49 @@ body {
   color: #a17b3d;
 }
 
+/* a Cormorant számjegyei eltérő magasságúak (2 kicsi, 4 lelóg), ezért a kód Nunitóval íródik */
 .lobby-card .code-box strong {
   color: #987039;
-  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 30px;
+  letter-spacing: 8px;
+  white-space: nowrap;
+  font-variant-numeric: lining-nums tabular-nums;
+}
+
+.lobby-card .copy-code {
+  margin-top: 8px;
+  padding: 5px 14px;
+  border: 1px solid #d9c6a2;
+  border-radius: 999px;
+  background: #fffdf9;
+  color: #806334;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.lobby-card .copy-code:hover {
+  background: #f3ead9;
+  border-color: #c6a363;
+}
+
+.lobby-card .players-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.lobby-card .player-count {
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: #f3ead9;
+  color: #806334;
+  font-family: Nunito, system-ui, sans-serif;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0;
+  font-variant-numeric: lining-nums tabular-nums;
 }
 
 .lobby-card .hint,
@@ -737,6 +888,152 @@ body {
 
 .lobby-card .btn.secondary:not(:disabled):hover {
   background: #eee3d1;
+}
+
+/* bábuválasztás a lobbiban: mindenkinek más figura jut */
+.figure-picker {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.figure-card {
+  position: relative;
+  display: flex;
+}
+
+.figure-picker .figure {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 10px 4px;
+  border: 1px solid #e9dfce;
+  border-radius: 12px;
+  background: #fbf7ef;
+  color: #514633;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.figure-picker .figure:not(:disabled):hover {
+  background: #f3ead9;
+}
+
+.figure-picker .figure .icon {
+  font-size: 30px;
+  line-height: 1.2;
+}
+
+.figure-picker .figure .owner {
+  color: #8d8578;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.figure-picker .figure:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+.figure-picker .figure.mine {
+  border-color: #aa8546;
+  background: #f3ead9;
+  box-shadow: inset 0 0 0 1px #aa8546;
+  opacity: 1;
+}
+
+/* szem gomb a figurakártya sarkában: a bábu nagyban, 3D-ben */
+.figure-eye {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 1px solid #e9dfce;
+  border-radius: 50%;
+  background: #fffdf9;
+  color: #987039;
+  cursor: pointer;
+}
+
+.figure-eye:hover {
+  background: #f3ead9;
+  border-color: #c6a363;
+}
+
+.figure-preview {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgba(60, 48, 30, 0.35);
+  backdrop-filter: blur(3px);
+}
+
+.figure-preview-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: min(360px, 100%);
+  box-sizing: border-box;
+  padding: 18px 20px;
+  border-radius: 16px;
+  background: #fffdf9;
+  box-shadow: 0 18px 48px rgba(97, 77, 43, 0.25);
+}
+
+.figure-preview-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.figure-preview-head h2 {
+  margin: 0;
+  color: #987039;
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.figure-preview-close {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: #f5efe4;
+  color: #806334;
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.figure-preview-close:hover {
+  background: #eee3d1;
+}
+
+.figure-preview-stage {
+  height: 300px;
+  border-radius: 12px;
+  background: radial-gradient(circle at 50% 35%, #ffffff, #efe6d6);
+  cursor: grab;
+}
+
+.figure-preview-card .hint {
+  margin: 0;
+  color: #8d8578;
+  font-size: 13px;
+  text-align: center;
 }
 
 @media (max-width: 760px) {
@@ -801,5 +1098,14 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .home-card .btn {
     transition: none;
+  }
+
+  .home-shell,
+  .home-landscape,
+  .home-brand,
+  .home-brand h1,
+  .home-caption,
+  .home-card > * {
+    animation: none;
   }
 }
