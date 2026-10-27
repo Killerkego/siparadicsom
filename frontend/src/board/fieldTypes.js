@@ -17,9 +17,3 @@ export const SPECIAL_TYPES = {
   csapda: 'Csapda',
   gambling: 'Gambling',
 };
-
-export function countByType(fields) {
-  const counts = {};
-  for (const f of fields) counts[f.type] = (counts[f.type] ?? 0) + 1;
-  return counts;
-}
