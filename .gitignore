@@ -1,0 +1,29 @@
+# Node / Vite (frontend)
+node_modules/
+dist/
+*.log
+.vite/
+
+# Python (backend)
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+
+# Környezeti változók, titkos kulcsok
+.env
+.env.*
+
+# Blender automatikus mentései
+*.blend1
+*.blend2
+
+# Szerkesztők, operációs rendszer
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Helyi Claude Code beállítások
+.claude/
