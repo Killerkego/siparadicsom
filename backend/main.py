@@ -5,6 +5,7 @@ A frontend `npm run dev` parancsa magától elindítja. Külön futtatás a proj
 """
 
 import secrets
+import time
 import uuid
 from typing import Annotated
 
@@ -17,6 +18,13 @@ FIELD_COUNT = 40
 CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"  # nincs benne 0/O és 1/I, hogy ne lehessen összekeverni
 CODE_LENGTH = 6
 PAWN_COLORS = ["#d63031", "#0984e3", "#00b894", "#fdcb6e", "#6c5ce7", "#e17055"]
+# a dobás animációjának hossza; egyezzen a frontend/src/game/timing.js értékeivel
+DICE_MS = 1200
+STEP_MS = 300
+
+
+def now_ms() -> int:
+    return int(time.time() * 1000)
 
 app = FastAPI(title="Síparadicsom")
 
@@ -63,8 +71,9 @@ def public_state(game: dict) -> dict:
         "host_id": game["host_id"],
         "players": players,
         "turn_player_id": players[game["turn"]]["id"] if game["status"] == "playing" else None,
-        # az utolsó dobás; a seq minden dobásnál nő, ebből tudja a kliens, hogy új dobás történt
+        # az utolsó dobás; az "at" időponthoz igazítva mindenkinél egyszerre fut az animáció
         "last_roll": game["last_roll"],
+        "server_time": now_ms(),  # ebből számolja a kliens, mennyit siet/késik az órája
         "min_players": MIN_PLAYERS,
         "max_players": MAX_PLAYERS,
     }
@@ -144,11 +153,20 @@ async def roll_dice(code: str, body: PlayerRef):
     player = game["players"][game["turn"]]
     if player["id"] != body.player_id:
         raise HTTPException(403, "Nem te következel.")
+    last = game["last_roll"]
+    if last and now_ms() < last["at"] + DICE_MS + last["value"] * STEP_MS:
+        raise HTTPException(409, "Még tart az előző lépés.")
     value = secrets.randbelow(6) + 1
     start = player["position"]
     player["position"] = (start + value) % FIELD_COUNT
-    seq = (game["last_roll"] or {}).get("seq", 0) + 1
-    game["last_roll"] = {"seq": seq, "player_id": player["id"], "value": value, "from": start, "to": player["position"]}
+    game["last_roll"] = {
+        "seq": (last or {}).get("seq", 0) + 1,
+        "player_id": player["id"],
+        "value": value,
+        "from": start,
+        "to": player["position"],
+        "at": now_ms(),
+    }
     game["turn"] = (game["turn"] + 1) % len(game["players"])
     await broadcast(game)
     return public_state(game)

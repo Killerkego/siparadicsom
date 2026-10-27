@@ -16,15 +16,18 @@ function loadSession() {
 // A játékos melyik játékban van ({ code, playerId }), és a játék élő állapota a szervertől.
 export function useGameSession() {
   const [session, setSession] = useState(loadSession);
-  const [game, setGame] = useState(null);
+  const [game, setGameState] = useState(null);
   const [retry, setRetry] = useState(0);
+
+  // az érkezés ideje a server_time-mal együtt megadja, mennyit tér el a böngésző órája a szerverétől
+  const setGame = useCallback((state) => setGameState(state && { ...state, received_at: Date.now() }), []);
 
   const saveSession = useCallback((s) => {
     if (s) sessionStorage.setItem(STORAGE_KEY, JSON.stringify(s));
     else sessionStorage.removeItem(STORAGE_KEY);
     setSession(s);
     if (!s) setGame(null);
-  }, []);
+  }, [setGame]);
 
   // WebSocketen érkezik minden változás (új játékos, kilépés, indítás)
   useEffect(() => {
@@ -44,7 +47,7 @@ export function useGameSession() {
       closedByUs = true;
       ws.close();
     };
-  }, [session, retry, saveSession]);
+  }, [session, retry, saveSession, setGame]);
 
   const enter = (result) => {
     setGame(result.game);

@@ -1,5 +1,5 @@
 import { spawn, spawnSync } from 'node:child_process';
-import { existsSync } from 'node:fs';
+import { existsSync, watch } from 'node:fs';
 import net from 'node:net';
 import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vite';
@@ -24,13 +24,45 @@ function killTree(child) {
   else child.kill();
 }
 
+// A Vite újraindulásakor (pl. a config mentésekor) is megmaradó állapot
+const state = (globalThis.siparadicsomBackend ??= { child: null, watcher: null });
+
+function startBackend(python) {
+  const child = spawn(python, ['-m', 'uvicorn', 'main:app', '--port', String(BACKEND_PORT)], {
+    cwd: BACKEND_DIR,
+    stdio: 'inherit',
+  });
+  state.child = child;
+  child.once('exit', () => {
+    if (state.child === child) state.child = null;
+  });
+}
+
+// A .py fájlok mentésekor újraindítjuk a backendet. Az uvicorn saját --reload-ja Windows-on
+// Ctrl+C jellel indítja újra magát, ami a közös konzolban a Vite-ot és a backendet is leállítja.
+function watchBackend(python) {
+  if (state.watcher) return;
+  let timer;
+  state.watcher = watch(BACKEND_DIR, (_, file) => {
+    if (!file?.endsWith('.py')) return;
+    clearTimeout(timer);
+    timer = setTimeout(() => {
+      const old = state.child;
+      if (!old) return startBackend(python);
+      old.once('exit', () => startBackend(python));
+      killTree(old);
+    }, 200);
+  });
+  process.once('exit', () => state.child && killTree(state.child));
+}
+
 // `npm run dev` a Python backendet is elindítja (backend/.venv), ha még nem fut
 function pythonBackend() {
   return {
     name: 'siparadicsom-backend',
     apply: 'serve',
     async configureServer(server) {
-      if (globalThis.siparadicsomBackend || (await portInUse(BACKEND_PORT))) return;
+      if (state.child || (await portInUse(BACKEND_PORT))) return;
       const python = [`${BACKEND_DIR}/.venv/Scripts/python.exe`, `${BACKEND_DIR}/.venv/bin/python`].find(existsSync);
       if (!python) {
         server.config.logger.warn(
@@ -40,13 +72,8 @@ function pythonBackend() {
         );
         return;
       }
-      const child = spawn(python, ['-m', 'uvicorn', 'main:app', '--port', String(BACKEND_PORT), '--reload'], {
-        cwd: BACKEND_DIR,
-        stdio: 'inherit',
-      });
-      globalThis.siparadicsomBackend = child;
-      child.once('exit', () => (globalThis.siparadicsomBackend = null));
-      process.once('exit', () => killTree(child));
+      startBackend(python);
+      watchBackend(python);
     },
   };
 }

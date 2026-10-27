@@ -70,6 +70,7 @@ export default function FixedCamera({ side = 0 }) {
     // mindig a rövidebb irányba fordul (pl. a START-on át 3 -> 0 oldal)
     const diff = (-side * Math.PI) / 2 - goal.current;
     goal.current += Math.atan2(Math.sin(diff), Math.cos(diff));
+    if (document.hidden) yaw.current = goal.current; // háttérben lévő fülön nem animálunk
   }, [side]);
 
   useFrame((_, delta) => {

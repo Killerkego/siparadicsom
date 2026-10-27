@@ -2,9 +2,8 @@ import { useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { TILE_H, tilePlacement } from '../board/layout';
+import { DICE_TIME, FIELD_COUNT, STEP_TIME } from './timing';
 
-const FIELD_COUNT = 40;
-const STEP_TIME = 0.3; // másodperc mezőnként
 const HOP = 0.45; // ugrás magassága lépésenként
 const LIFT = 0.1; // ennyivel emelkedik a mező, ha fölé visszük az egeret
 const SCALE = 0.65; // kisebb bábuk, hogy hatan is elférjenek egy mezőn
@@ -29,31 +28,28 @@ function slotPositions(slot) {
   });
 }
 
-// A bábu mezőről mezőre ugrál, amíg el nem éri a `field` mezőt. Minden érintett mezőnél
-// szól az onStep-nek, a célban az onArrived-nak.
-export default function Pawn({ field, slot = 0, lifted, color = '#d63031', onStep, onArrived }) {
+// A bábu a `field` mezőn áll. Ha `roll` is van (a bábu utolsó dobása, `start` időponttal),
+// akkor a kocka után mezőről mezőre ugrál from-ból to-ba; a helyzetét mindig az eltelt
+// időből számoljuk, így minden böngészőben ugyanott tart.
+export default function Pawn({ field, roll, slot = 0, lifted, color = '#d63031' }) {
   const group = useRef();
-  const anim = useRef({ current: field, progress: 0 });
   const positions = useMemo(() => slotPositions(slot), [slot]);
 
-  useFrame((_, delta) => {
-    const a = anim.current;
+  useFrame(() => {
     const g = group.current;
-    if (a.current === field) {
-      g.position.copy(positions[field]);
-      if (lifted) g.position.y += LIFT;
-      return;
+    if (roll) {
+      const s = (Date.now() - roll.start - DICE_TIME) / STEP_TIME; // hány lépésnél tart
+      if (s < roll.value) {
+        const done = Math.max(0, Math.floor(s));
+        const p = Math.max(0, s - done);
+        const from = (roll.from + done) % FIELD_COUNT;
+        g.position.lerpVectors(positions[from], positions[(from + 1) % FIELD_COUNT], p);
+        g.position.y += Math.sin(p * Math.PI) * HOP;
+        return;
+      }
     }
-    const next = (a.current + 1) % FIELD_COUNT;
-    a.progress = Math.min(1, a.progress + delta / STEP_TIME);
-    g.position.lerpVectors(positions[a.current], positions[next], a.progress);
-    g.position.y += Math.sin(a.progress * Math.PI) * HOP;
-    if (a.progress === 1) {
-      a.current = next;
-      a.progress = 0;
-      onStep?.(next);
-      if (next === field) onArrived?.(field);
-    }
+    g.position.copy(positions[field]);
+    if (lifted) g.position.y += LIFT;
   });
 
   return (
