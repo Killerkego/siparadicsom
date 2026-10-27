@@ -6,14 +6,16 @@ import * as THREE from 'three';
 // fordul, amelyiken a bábu áll (`side`: 0 = alsó, 1 = bal, 2 = felső, 3 = jobb), és a
 // távolsága az ablakmérethez igazodik, hogy a teljes tábla mindig látszódjon.
 const TARGET = new THREE.Vector3(0, 0, -0.8);
-const VIEW_DIR = new THREE.Vector3(0, 11, 17).normalize();
+// 22°-os, lapos rálátás: a tábla fölött látszik a horizont, a hegyek és a naplementés ég
+const PITCH = THREE.MathUtils.degToRad(22);
+const VIEW_DIR = new THREE.Vector3(0, Math.sin(PITCH), Math.cos(PITCH));
 const UP = new THREE.Vector3(0, 1, 0);
 const HALF = 6.7; // a fa keret fele
 const CORNERS = [];
 for (const x of [-HALF, HALF]) for (const z of [-HALF, HALF]) for (const y of [-0.5, 0.4]) CORNERS.push(new THREE.Vector3(x, y, z));
 
 const MAX_W = 1.9; // NDC-ben (a teljes szélesség 2)
-const MAX_H = 1.45; // a fennmaradó rész a háttéré (felvonó, sípálya)
+const MAX_H = 1.4; // a fennmaradó rész a háttéré (szálloda, felvonó, hegyek, ég)
 const BOTTOM = -0.97;
 const TURN_SPEED = 3; // nagyobb = gyorsabb fordulás
 
@@ -28,6 +30,8 @@ function boundsAt(camera, dist) {
   const b = { minX: Infinity, maxX: -Infinity, minY: Infinity, maxY: -Infinity };
   for (const c of CORNERS) {
     tmp.copy(c).project(camera);
+    // a kamera mögé vagy a közeli vágósík elé került sarok: ilyen közelről biztosan nem fér ki a tábla
+    if (tmp.z < -1 || tmp.z > 1) return { minX: -Infinity, maxX: Infinity, minY: -Infinity, maxY: Infinity };
     b.minX = Math.min(b.minX, tmp.x);
     b.maxX = Math.max(b.maxX, tmp.x);
     b.minY = Math.min(b.minY, tmp.y);

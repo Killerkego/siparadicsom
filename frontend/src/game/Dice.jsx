@@ -5,7 +5,8 @@ import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeom
 import { DICE_TIME } from './timing';
 
 const SIZE = 0.7;
-const REST = new THREE.Vector3(0, SIZE / 2, 2.9); // a tábla közepén, a felirat alatt
+// az építkezés kis terén, elöl középen (a csoportja az üdülővel együtt a kamera felé fordul)
+const REST = new THREE.Vector3(0, SIZE / 2 + 0.06, 2.3);
 const TAU = Math.PI * 2;
 
 // pöttyök helye a lapon (0..1 koordinátákban)
@@ -90,7 +91,7 @@ export default function Dice({ roll, onClick, disabled }) {
     anim.current = {
       start: roll.start,
       fromPos: m.position.clone(),
-      toPos: new THREE.Vector3(REST.x + rand(-1.2, 1.2), REST.y, REST.z + rand(-0.4, 0.4)),
+      toPos: new THREE.Vector3(REST.x + rand(-0.3, 0.3), REST.y, REST.z + rand(-0.25, 0.25)),
       fromRot: new THREE.Vector3(m.rotation.x % TAU, m.rotation.y % TAU, m.rotation.z % TAU),
       toRot: new THREE.Vector3(fx + spins(), rand(0, TAU), fz + spins()),
     };

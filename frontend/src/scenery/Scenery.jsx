@@ -4,9 +4,10 @@ import * as THREE from 'three';
 import ChimneySmoke from './ChimneySmoke';
 import SkiLift from './SkiLift';
 import Skiers from './Skiers';
+import Wildlife from './Wildlife';
 
-// Blenderben készült: fa keret, havas táj, fenyők, házak, felvonó, síelő- és székminta
-// (forrás: blender/palya.blend)
+// Blenderben készült meseszerű táj: tábla kerete, mesefenyők, négyféle házikó, hóemberek, alpesi grand hotel, gondolás
+// felvonó, felhők, síelő-, snowboardos-, szarvas-, őz- és kabinminta (forrás: blender/palya.blend; a hóember forrása: CREDITS.md)
 const MODEL_URL = '/models/kornyezet.glb';
 
 function pointsByPrefix(scene, prefix) {
@@ -25,8 +26,9 @@ export default function Scenery() {
       chimneys: pointsByPrefix(scene, 'Fust'),
       // a két kötélág egy zárt kört alkot: fel a jobb, le a bal oldalon
       liftLoop: [...pointsByPrefix(scene, 'KotelFel'), ...pointsByPrefix(scene, 'KotelLe')],
-      chair: scene.getObjectByName('Szek_minta'),
-      skier: scene.getObjectByName('Sielo_minta'),
+      cabin: scene.getObjectByName('Kabin_minta'),
+      riders: { ski: scene.getObjectByName('Sielo_minta'), board: scene.getObjectByName('Snowboard_minta') },
+      animals: { stag: scene.getObjectByName('Szarvas_minta'), roe: scene.getObjectByName('Oz_minta') },
       terrain: scene.getObjectByName('Talaj'),
     };
   }, [scene]);
@@ -34,20 +36,27 @@ export default function Scenery() {
   useLayoutEffect(() => {
     scene.traverse((o) => {
       if (!o.isMesh) return;
-      o.receiveShadow = true;
-      o.castShadow = o.name !== 'Talaj';
+      // a távoli hegyek és a felhők nem vetnek árnyékot, a felhőket a köd sem halványítja el
+      const sky = o.name.startsWith('Felho');
+      o.receiveShadow = !sky;
+      o.castShadow = o.name !== 'Talaj' && !o.name.startsWith('Hegyvonulat') && !sky;
+      if (sky) o.material.fog = false;
     });
     // a minták csak másolásra kellenek
-    parts.chair.visible = false;
-    parts.skier.visible = false;
+    parts.cabin.visible = false;
+    parts.riders.ski.visible = false;
+    parts.riders.board.visible = false;
+    parts.animals.stag.visible = false;
+    parts.animals.roe.visible = false;
   }, [scene, parts]);
 
   return (
     <>
       <primitive object={scene} />
       <ChimneySmoke positions={parts.chimneys} />
-      <SkiLift loop={parts.liftLoop} chair={parts.chair} />
-      <Skiers template={parts.skier} terrain={parts.terrain} />
+      <SkiLift loop={parts.liftLoop} cabin={parts.cabin} />
+      <Skiers templates={parts.riders} terrain={parts.terrain} />
+      <Wildlife templates={parts.animals} terrain={parts.terrain} />
     </>
   );
 }

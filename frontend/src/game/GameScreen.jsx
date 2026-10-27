@@ -3,14 +3,16 @@ import { Canvas } from '@react-three/fiber';
 import Board from '../board/Board';
 import FixedCamera from '../board/FixedCamera';
 import Scenery from '../scenery/Scenery';
+import Sky, { HORIZON_COLOR } from '../scenery/Sky';
+import BuildSite from './BuildSite';
 import Dice from './Dice';
-import Pawn from './Pawn';
+import Pawn, { FIGURE_NAMES } from './Pawn';
 import { DICE_TIME, actionEnd, actionStart, shownField } from './timing';
 import { FIELD_TYPES, SPECIAL_TYPES } from '../board/fieldTypes';
 import boardData from '../data/board.json';
 
 const fields = boardData.fields;
-const DECISIONS = { gamble: 'Gambling', lift: 'Felvonó', trap: 'Csapda' };
+const DECISIONS = { gamble: 'Gambling', lift: 'Felvonó', trap: 'Csapda', build: 'Építkezés' };
 
 const hk = (n) => `${n.toLocaleString('hu-HU')} HK`;
 
@@ -34,8 +36,74 @@ function FieldName({ field }) {
   );
 }
 
+function buildPrice(building, discount) {
+  return Math.round((building.price * (100 - discount)) / 100 / 50) * 50;
+}
+
+// egy építési elem állapota a játékosnál: megvan / megvehető / hiányzik az előfeltétele
+function buildState(building, owned) {
+  if (owned.includes(building.id)) return 'owned';
+  return building.requires.every((r) => owned.includes(r)) ? 'available' : 'locked';
+}
+
+// a kör végi építkezés: legfeljebb egy elem, vásárlási mezőn kedvezménnyel
+function BuildDecision({ pending, buildings, busy, onChoose }) {
+  const options = buildings.filter((b) => pending.options.includes(b.id));
+  return (
+    <div className="decision">
+      <b>Építkezés a kör végén</b>
+      <p>
+        Legfeljebb egy elemet építhetsz meg.
+        {pending.discount > 0 && ` Vásárlási mezőn állsz: ${pending.discount}% kedvezmény!`}
+      </p>
+      <div className="choices build-options">
+        {options.map((b) => (
+          <button key={b.id} disabled={busy} onClick={() => onChoose(b.id)}>
+            {b.name}
+            <span className="price">
+              {pending.discount > 0 && <s>{hk(b.price)}</s>} {hk(buildPrice(b, pending.discount))}
+            </span>
+          </button>
+        ))}
+        <button className="secondary" disabled={busy} onClick={() => onChoose('no')}>
+          Most nem építek
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// a saját építkezés: mi van meg, mi vehető, minek hiányzik az előfeltétele
+function BuildList({ buildings, owned }) {
+  const nameOf = (id) => buildings.find((b) => b.id === id)?.name;
+  return (
+    <div className="build-list">
+      <div>
+        Építkezésem: <b>{owned.length} / {buildings.length}</b>
+      </div>
+      <div className="progress">
+        <span style={{ width: `${(owned.length / buildings.length) * 100}%` }} />
+      </div>
+      <ul>
+        {buildings.map((b) => {
+          const state = buildState(b, owned);
+          const missing = b.requires.filter((r) => !owned.includes(r)).map(nameOf);
+          return (
+            <li key={b.id} className={state} title={missing.length ? `Előfeltétel: ${missing.join(', ')}` : ''}>
+              <span className="mark">{state === 'owned' ? '✔' : state === 'available' ? '●' : '🔒'}</span>
+              {b.name}
+              <span className="price">{state === 'owned' ? 'kész' : hk(b.price)}</span>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+}
+
 // a speciális mezőn hozott döntés gombjai; csak annál látszik, aki a mezőre lépett
-function Decision({ pending, rules, me, busy, onChoose }) {
+function Decision({ pending, rules, buildings, me, busy, onChoose }) {
+  if (pending.type === 'build') return <BuildDecision pending={pending} buildings={buildings} busy={busy} onChoose={onChoose} />;
   if (pending.type === 'gamble') {
     return (
       <div className="decision">
@@ -109,7 +177,7 @@ function GamePanel({ game, settled, playerId, fieldOf, phase, busy, action, erro
   return (
     <div className="game-panel">
       {pending && pending.player_id === playerId ? (
-        <Decision pending={pending} rules={game.rules} me={me} busy={busy} onChoose={onChoose} />
+        <Decision pending={pending} rules={game.rules} buildings={game.buildings} me={me} busy={busy} onChoose={onChoose} />
       ) : (
         <button onClick={onRoll} disabled={!myTurn || busy || !!game.pending}>
           {label}
@@ -137,11 +205,16 @@ function GamePanel({ game, settled, playerId, fieldOf, phase, busy, action, erro
                 <br />
                 <span className={s.money < 0 ? 'money debt' : 'money'}>{hk(s.money)}</span>
                 {s.in_school && ' · oktatáson'}
+                {' · '}
+                <span title={s.buildings.map((id) => game.buildings.find((b) => b.id === id)?.name).join(', ')}>
+                  🏗 {s.buildings.length}/{game.buildings.length}
+                </span>
               </span>
             </li>
           );
         })}
       </ul>
+      {me && <BuildList buildings={game.buildings} owned={settledPlayer(me).buildings} />}
       {Object.keys(settled.traps).length > 0 && (
         <div className="traps">
           {Object.entries(settled.traps).map(([field, trap]) => (
@@ -215,6 +288,9 @@ export default function GameScreen({ game, playerId, onRoll, onChoose, onLeave }
   // mindenkinél a saját bábuja felé fordul a kamera; mások lépésére nem változik a nézet
   const me = game.players.find((p) => p.id === playerId);
   const focusField = me ? fieldOf(me) : 0;
+  const side = Math.floor(focusField / 10);
+  // a középen látható építkezés is csak a mozgás végén frissül
+  const settledMe = me && (settled.players.find((p) => p.id === me.id) ?? me);
   const diceRoll = useMemo(
     () => action?.dice && { value: action.dice, seq: action.seq, start: action.start },
     [action],
@@ -240,40 +316,51 @@ export default function GameScreen({ game, playerId, onRoll, onChoose, onLeave }
 
   return (
     <>
-      <Canvas shadows="percentage" flat dpr={[1, 2]} camera={{ fov: 40, near: 0.5, far: 200 }}>
-        <color attach="background" args={['#cfe2f0']} />
-        <fog attach="fog" args={['#cfe2f0', 45, 110]} />
-        <FixedCamera side={Math.floor(focusField / 10)} />
-        <hemisphereLight args={['#eaf4ff', '#b9c7d4', 0.75]} />
+      <Canvas shadows="percentage" dpr={[1, 2]} camera={{ fov: 55, near: 0.5, far: 400 }}>
+        {/* meseszerű pára: a távoli hegyek a horizont rózsaszínjébe halványulnak */}
+        <fog attach="fog" args={[HORIZON_COLOR, 90, 300]} />
+        <Sky />
+        <FixedCamera side={side} />
+        <hemisphereLight args={['#e8f0f8', '#f4eee8', 1.25]} />
         <directionalLight
-          position={[-9, 18, 10]}
-          intensity={1.5}
+          position={[-28, 24, 6]}
+          color="#fff0db"
+          intensity={2.2}
           castShadow
           shadow-mapSize={[2048, 2048]}
           shadow-bias={-0.0004}
           shadow-normalBias={0.03}
-          shadow-camera-left={-32}
-          shadow-camera-right={32}
-          shadow-camera-top={32}
-          shadow-camera-bottom={-32}
+          shadow-camera-left={-35}
+          shadow-camera-right={35}
+          shadow-camera-top={35}
+          shadow-camera-bottom={-35}
           shadow-camera-near={1}
-          shadow-camera-far={60}
+          shadow-camera-far={90}
         />
         <Suspense fallback={null}>
           <Scenery />
         </Suspense>
         {fontsReady && <Board fields={fields} onHover={setHovered} />}
-        <Dice roll={diceRoll} disabled={busy || !myTurn || !!game.pending} onClick={rollDice} />
-        {game.players.map((p, i) => (
-          <Pawn
-            key={p.id}
-            field={p.position}
-            action={action?.player_id === p.id ? action : null}
-            slot={i}
-            color={p.color}
-            lifted={phase === 'idle' && hovered?.id === p.position}
-          />
-        ))}
+        <group rotation-y={(-side * Math.PI) / 2}>
+          <Dice roll={diceRoll} disabled={busy || !myTurn || !!game.pending} onClick={rollDice} />
+        </group>
+        {settledMe && (
+          <Suspense fallback={null}>
+            <BuildSite buildings={game.buildings} owned={settledMe.buildings} side={side} />
+          </Suspense>
+        )}
+        <Suspense fallback={null}>
+          {game.players.map((p, i) => (
+            <Pawn
+              key={p.id}
+              field={p.position}
+              action={action?.player_id === p.id ? action : null}
+              slot={i}
+              color={p.color}
+              lifted={phase === 'idle' && hovered?.id === p.position}
+            />
+          ))}
+        </Suspense>
       </Canvas>
       <GamePanel
         game={game}
@@ -288,6 +375,37 @@ export default function GameScreen({ game, playerId, onRoll, onChoose, onLeave }
         onChoose={choose}
         onLeave={onLeave}
       />
+      {game.status === 'finished' && phase === 'idle' && (
+        <Victory game={game} playerId={playerId} onLeave={onLeave} />
+      )}
     </>
+  );
+}
+
+// a játék vége: a győztes, a figurája és a felépült síparadicsom; további lépés már nincs
+function Victory({ game, playerId, onLeave }) {
+  const index = game.players.findIndex((p) => p.id === game.winner_id);
+  const winner = game.players[index];
+  if (!winner) return null;
+  return (
+    <div className="victory">
+      <div className="victory-card">
+        <div className="trophy">🏆</div>
+        <h2>{winner.id === playerId ? 'Nyertél!' : `${winner.name} nyert!`}</h2>
+        <p>
+          <span className="dot" style={{ background: winner.color }} /> {winner.name} · {FIGURE_NAMES[index % FIGURE_NAMES.length]}
+        </p>
+        <p>
+          Felépítette a teljes síparadicsomot ({game.buildings.length}/{game.buildings.length}), és {hk(winner.money)}{' '}
+          maradt a számláján.
+        </p>
+        <ul>
+          {game.buildings.map((b) => (
+            <li key={b.id}>✔ {b.name}</li>
+          ))}
+        </ul>
+        <button onClick={onLeave}>Új játék</button>
+      </div>
+    </div>
   );
 }
