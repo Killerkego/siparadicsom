@@ -1,6 +1,6 @@
-"""Síparadicsom backend: játék létrehozása kóddal, csatlakozás, lobbi és a játék indítása.
+"""Síparadicsom backend: játék létrehozása kóddal, csatlakozás, lobbi, indítás és a dobások.
 
-Futtatás a projekt gyökeréből:
+A frontend `npm run dev` parancsa magától elindítja. Külön futtatás a projekt gyökeréből:
     backend/.venv/Scripts/python -m uvicorn main:app --app-dir backend --port 8000 --reload --reload-dir backend
 """
 
@@ -11,10 +11,12 @@ from typing import Annotated
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from pydantic import BaseModel, StringConstraints
 
-MIN_PLAYERS = 2
+MIN_PLAYERS = 1  # tesztelés miatt egyedül is indítható; a kész játékhoz állítsd 2-re
 MAX_PLAYERS = 6
+FIELD_COUNT = 40
 CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"  # nincs benne 0/O és 1/I, hogy ne lehessen összekeverni
 CODE_LENGTH = 6
+PAWN_COLORS = ["#d63031", "#0984e3", "#00b894", "#fdcb6e", "#6c5ce7", "#e17055"]
 
 app = FastAPI(title="Síparadicsom")
 
@@ -40,6 +42,12 @@ def new_code() -> str:
             return code
 
 
+def new_player(game: dict | None, name: str) -> dict:
+    used = {p["color"] for p in game["players"]} if game else set()
+    color = next(c for c in PAWN_COLORS if c not in used)
+    return {"id": uuid.uuid4().hex, "name": name, "color": color, "position": 0}
+
+
 def get_game(code: str) -> dict:
     game = games.get(code.upper())
     if game is None:
@@ -48,11 +56,15 @@ def get_game(code: str) -> dict:
 
 
 def public_state(game: dict) -> dict:
+    players = game["players"]
     return {
         "code": game["code"],
         "status": game["status"],  # "lobby" vagy "playing"
         "host_id": game["host_id"],
-        "players": game["players"],
+        "players": players,
+        "turn_player_id": players[game["turn"]]["id"] if game["status"] == "playing" else None,
+        # az utolsó dobás; a seq minden dobásnál nő, ebből tudja a kliens, hogy új dobás történt
+        "last_roll": game["last_roll"],
         "min_players": MIN_PLAYERS,
         "max_players": MAX_PLAYERS,
     }
@@ -76,8 +88,15 @@ def joined_response(game: dict, player: dict) -> dict:
 @app.post("/api/games")
 async def create_game(body: PlayerIn):
     code = new_code()
-    player = {"id": uuid.uuid4().hex, "name": body.name}
-    games[code] = {"code": code, "status": "lobby", "host_id": player["id"], "players": [player]}
+    player = new_player(None, body.name)
+    games[code] = {
+        "code": code,
+        "status": "lobby",
+        "host_id": player["id"],
+        "players": [player],
+        "turn": 0,
+        "last_roll": None,
+    }
     return joined_response(games[code], player)
 
 
@@ -90,7 +109,7 @@ async def join_game(code: str, body: PlayerIn):
         raise HTTPException(409, "A játék megtelt.")
     if any(p["name"].lower() == body.name.lower() for p in game["players"]):
         raise HTTPException(409, "Ez a név már foglalt ebben a játékban.")
-    player = {"id": uuid.uuid4().hex, "name": body.name}
+    player = new_player(game, body.name)
     game["players"].append(player)
     await broadcast(game)
     return joined_response(game, player)
@@ -111,6 +130,26 @@ async def start_game(code: str, body: PlayerRef):
     if len(game["players"]) < MIN_PLAYERS:
         raise HTTPException(409, f"Legalább {MIN_PLAYERS} játékos kell az indításhoz.")
     game["status"] = "playing"
+    game["turn"] = 0
+    await broadcast(game)
+    return public_state(game)
+
+
+@app.post("/api/games/{code}/roll")
+async def roll_dice(code: str, body: PlayerRef):
+    """A soron következő játékos dob; a szerver sorsol, lépteti a bábut és továbbadja a kört."""
+    game = get_game(code)
+    if game["status"] != "playing":
+        raise HTTPException(409, "A játék még nem indult el.")
+    player = game["players"][game["turn"]]
+    if player["id"] != body.player_id:
+        raise HTTPException(403, "Nem te következel.")
+    value = secrets.randbelow(6) + 1
+    start = player["position"]
+    player["position"] = (start + value) % FIELD_COUNT
+    seq = (game["last_roll"] or {}).get("seq", 0) + 1
+    game["last_roll"] = {"seq": seq, "player_id": player["id"], "value": value, "from": start, "to": player["position"]}
+    game["turn"] = (game["turn"] + 1) % len(game["players"])
     await broadcast(game)
     return public_state(game)
 
@@ -118,13 +157,20 @@ async def start_game(code: str, body: PlayerRef):
 @app.post("/api/games/{code}/leave")
 async def leave_game(code: str, body: PlayerRef):
     game = get_game(code)
-    game["players"] = [p for p in game["players"] if p["id"] != body.player_id]
+    index = next((i for i, p in enumerate(game["players"]) if p["id"] == body.player_id), None)
+    if index is None:
+        return {"ok": True}
+    game["players"].pop(index)
     if not game["players"]:
         del games[game["code"]]
         connections.pop(game["code"], None)
         return {"ok": True}
     if game["host_id"] == body.player_id:
         game["host_id"] = game["players"][0]["id"]  # a következő játékos lesz a házigazda
+    # a kör annál marad, aki eddig is következett volna
+    if index < game["turn"]:
+        game["turn"] -= 1
+    game["turn"] %= len(game["players"])
     await broadcast(game)
     return {"ok": True}
 

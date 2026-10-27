@@ -1,4 +1,4 @@
-import { Suspense, useEffect, useState } from 'react';
+import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { Canvas } from '@react-three/fiber';
 import Board from '../board/Board';
 import FixedCamera from '../board/FixedCamera';
@@ -48,20 +48,36 @@ function Legend({ hovered }) {
   );
 }
 
-function GamePanel({ code, phase, roll, pawnField, onRoll, onLeave }) {
+function GamePanel({ game, playerId, display, phase, busy, lastRoll, error, onRoll, onLeave }) {
+  const myTurn = game.turn_player_id === playerId;
+  const turnPlayer = game.players.find((p) => p.id === game.turn_player_id);
+  const roller = lastRoll && game.players.find((p) => p.id === lastRoll.player_id);
+
   return (
     <div className="game-panel">
-      <button onClick={onRoll} disabled={phase !== 'idle'}>
-        {phase === 'rolling' ? 'Gurul…' : phase === 'moving' ? 'Lép…' : 'Dobás'}
+      <button onClick={onRoll} disabled={!myTurn || busy}>
+        {phase === 'rolling' ? 'Gurul…' : phase === 'moving' ? 'Lép…' : myTurn ? 'Dobás' : 'Várj a sorodra'}
       </button>
       <div>
-        Dobott szám: <b>{roll && phase !== 'rolling' ? roll.value : '–'}</b>
+        Következik: <b>{myTurn ? 'te' : turnPlayer?.name}</b>
       </div>
       <div>
-        Bábu: {phase === 'idle' ? <FieldName field={fields[pawnField]} /> : '…'}
+        Dobott szám: <b>{lastRoll && phase !== 'rolling' ? `${lastRoll.value} (${roller?.name ?? '?'})` : '–'}</b>
       </div>
+      <ul className="panel-players">
+        {game.players.map((p) => (
+          <li key={p.id} className={p.id === game.turn_player_id ? 'turn' : ''}>
+            <span className="dot" style={{ background: p.color }} />
+            <span>
+              {p.name}
+              {p.id === playerId && ' (te)'}: <FieldName field={fields[display[p.id] ?? p.position]} />
+            </span>
+          </li>
+        ))}
+      </ul>
+      {error && <div className="error">{error}</div>}
       <div className="game-code">
-        Játékkód: <b>{code}</b>{' '}
+        Játékkód: <b>{game.code}</b>{' '}
         <button className="leave" onClick={onLeave}>
           Kilépés
         </button>
@@ -70,22 +86,67 @@ function GamePanel({ code, phase, roll, pawnField, onRoll, onLeave }) {
   );
 }
 
-export default function GameScreen({ code, onLeave }) {
+function positionsOf(game) {
+  return Object.fromEntries(game.players.map((p) => [p.id, p.position]));
+}
+
+export default function GameScreen({ game, playerId, onRoll, onLeave }) {
   const [hovered, setHovered] = useState(null);
   const fontsReady = useFontsReady();
 
-  // idle -> rolling (kocka gurul) -> moving (bábu lép) -> idle
+  // A szerver sorsolja a dobást; minden böngésző sorban lejátssza a dobásokat:
+  // idle -> rolling (kocka gurul) -> moving (a dobó bábuja lép) -> idle
   const [phase, setPhase] = useState('idle');
-  const [roll, setRoll] = useState(null);
-  const [pawnField, setPawnField] = useState(0);
-  // a mező, amelyen a bábu épp áll lépés közben; ehhez fordul a kamera
+  const [queue, setQueue] = useState([]);
+  const [active, setActive] = useState(null); // az épp lejátszott (vagy utolsó) dobás
+  const seenSeq = useRef(game.last_roll?.seq ?? 0);
+  const doneSeq = useRef(game.last_roll?.seq ?? 0);
+  // a bábuk látható helye; a dobó bábuja csak a kocka landolása után indul el
+  const [display, setDisplay] = useState(() => positionsOf(game));
+  // a mező, amelyen a lépő bábu épp jár
   const [pawnAt, setPawnAt] = useState(0);
+  const [requesting, setRequesting] = useState(false);
+  const [error, setError] = useState('');
 
-  const rollDice = () => {
-    if (phase !== 'idle') return;
-    // később a Python backend adhatja a dobás eredményét
-    setRoll({ value: 1 + Math.floor(Math.random() * 6), id: Date.now() });
+  useEffect(() => {
+    const r = game.last_roll;
+    if (r && r.seq > seenSeq.current) {
+      seenSeq.current = r.seq;
+      setQueue((q) => [...q, r]);
+    }
+  }, [game.last_roll]);
+
+  useEffect(() => {
+    if (phase !== 'idle' || queue.length === 0) return;
+    const [next, ...rest] = queue;
+    setQueue(rest);
+    setActive(next);
+    setPawnAt(next.from);
     setPhase('rolling');
+  }, [phase, queue]);
+
+  // ha minden dobás lejátszódott, a bábuk a szerver szerinti helyen állnak (pl. kilépés után)
+  useEffect(() => {
+    if (phase === 'idle' && (game.last_roll?.seq ?? 0) <= doneSeq.current) setDisplay(positionsOf(game));
+  }, [phase, game]);
+
+  const busy = phase !== 'idle' || queue.length > 0 || requesting;
+  const diceRoll = useMemo(() => active && { value: active.value, id: active.seq }, [active]);
+  // mindenkinél a saját bábuja felé fordul a kamera; mások lépésére nem változik a nézet
+  const myPawnMoving = phase !== 'idle' && active?.player_id === playerId;
+  const focusField = myPawnMoving ? pawnAt : (display[playerId] ?? 0);
+
+  const rollDice = async () => {
+    if (busy || game.turn_player_id !== playerId) return;
+    setRequesting(true);
+    setError('');
+    try {
+      await onRoll();
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setRequesting(false);
+    }
   };
 
   return (
@@ -93,7 +154,7 @@ export default function GameScreen({ code, onLeave }) {
       <Canvas shadows="percentage" flat dpr={[1, 2]} camera={{ fov: 40, near: 0.5, far: 200 }}>
         <color attach="background" args={['#cfe2f0']} />
         <fog attach="fog" args={['#cfe2f0', 45, 110]} />
-        <FixedCamera side={Math.floor(pawnAt / 10)} />
+        <FixedCamera side={Math.floor(focusField / 10)} />
         <hemisphereLight args={['#eaf4ff', '#b9c7d4', 0.75]} />
         <directionalLight
           position={[-9, 18, 10]}
@@ -114,23 +175,48 @@ export default function GameScreen({ code, onLeave }) {
         </Suspense>
         {fontsReady && <Board fields={fields} onHover={setHovered} />}
         <Dice
-          roll={roll}
-          disabled={phase !== 'idle'}
+          roll={diceRoll}
+          disabled={busy || game.turn_player_id !== playerId}
           onClick={rollDice}
-          onRolled={(value) => {
+          onRolled={() => {
             setPhase('moving');
-            setPawnField((f) => (f + value) % fields.length);
+            setDisplay((d) => ({ ...d, [active.player_id]: active.to }));
           }}
         />
-        <Pawn
-          field={pawnField}
-          lifted={phase === 'idle' && hovered?.id === pawnField}
-          onStep={setPawnAt}
-          onArrived={() => setPhase('idle')}
-        />
+        {game.players.map((p, i) => {
+          const moving = phase === 'moving' && p.id === active?.player_id;
+          return (
+            <Pawn
+              key={p.id}
+              field={display[p.id] ?? p.position}
+              slot={i}
+              color={p.color}
+              lifted={phase === 'idle' && hovered?.id === display[p.id]}
+              onStep={moving ? setPawnAt : undefined}
+              onArrived={
+                moving
+                  ? () => {
+                      doneSeq.current = active.seq;
+                      setPhase('idle');
+                    }
+                  : undefined
+              }
+            />
+          );
+        })}
       </Canvas>
       <Legend hovered={hovered} />
-      <GamePanel code={code} phase={phase} roll={roll} pawnField={pawnField} onRoll={rollDice} onLeave={onLeave} />
+      <GamePanel
+        game={game}
+        playerId={playerId}
+        display={display}
+        phase={phase}
+        busy={busy}
+        lastRoll={active}
+        error={error}
+        onRoll={rollDice}
+        onLeave={onLeave}
+      />
     </>
   );
 }

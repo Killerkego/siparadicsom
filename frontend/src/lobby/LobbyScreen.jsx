@@ -32,6 +32,7 @@ export default function LobbyScreen({ game, playerId, onStart, onLeave }) {
         <ul className="players">
           {game.players.map((p) => (
             <li key={p.id}>
+              <span className="dot" style={{ background: p.color }} />
               <span>{p.name}</span>
               {p.id === game.host_id && <span className="badge">házigazda</span>}
               {p.id === playerId && <span className="badge me">te</span>}
