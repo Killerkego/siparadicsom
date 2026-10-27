@@ -24,4 +24,6 @@ export const createGame = (name) => request('POST', '/games', { name });
 export const joinGame = (code, name) => request('POST', `/games/${code}/join`, { name });
 export const startGame = (code, playerId) => request('POST', `/games/${code}/start`, { player_id: playerId });
 export const rollDice = (code, playerId) => request('POST', `/games/${code}/roll`, { player_id: playerId });
+export const chooseOption = (code, playerId, choice) =>
+  request('POST', `/games/${code}/choose`, { player_id: playerId, choice });
 export const leaveGame =(code, playerId) => request('POST', `/games/${code}/leave`, { player_id: playerId });

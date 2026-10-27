@@ -1,22 +1,48 @@
-// A dobás animációjának ütemezése. A szerver megadja, mikor történt a dobás ("at"), és minden
-// böngésző ehhez az időponthoz igazítja az animációt, így mindenkinél egyszerre fut. Ha egy fül
-// közben a háttérben volt, visszaváltáskor ott folytatódik, ahol a többieknél tart.
-// Az értékek egyezzenek a backend/main.py DICE_MS és STEP_MS értékeivel.
+// A mozgások ütemezése. A szerver megadja, mikor történt a mozgás ("at"), és minden böngésző
+// ehhez az időponthoz igazítja az animációt, így mindenkinél egyszerre fut. Ha egy fül közben a
+// háttérben volt, visszaváltáskor ott folytatódik, ahol a többieknél tart.
+// Az értékek egyezzenek a backend/main.py DICE_MS, STEP_MS és JUMP_MS értékeivel.
 export const DICE_TIME = 1200; // ms, amíg a kocka gurul
 export const STEP_TIME = 300; // ms mezőnként
+export const JUMP_TIME = 900; // ms, felvonós átugrás
 export const FIELD_COUNT = 40;
 
-// a dobás kezdete a böngésző órája szerint (ms)
-export function rollStart(roll, game) {
-  return roll.at - (game.server_time - game.received_at);
+const wrap = (n) => ((n % FIELD_COUNT) + FIELD_COUNT) % FIELD_COUNT;
+const moveTime = (m) => (m.type === 'jump' ? JUMP_TIME : Math.abs(m.steps) * STEP_TIME);
+
+// a mozgás kezdete a böngésző órája szerint (ms)
+export function actionStart(action, game) {
+  return action.at - (game.server_time - game.received_at);
 }
 
-export function rollEnd(roll, start) {
-  return start + DICE_TIME + roll.value * STEP_TIME;
+export function actionEnd(action, start) {
+  return start + (action.dice ? DICE_TIME : 0) + action.moves.reduce((sum, m) => sum + moveTime(m), 0);
 }
 
-// melyik mezőn jár a dobó bábuja az adott pillanatban
-export function fieldAt(roll, start, now) {
-  const steps = Math.floor((now - start - DICE_TIME) / STEP_TIME);
-  return (roll.from + Math.min(Math.max(steps, 0), roll.value)) % FIELD_COUNT;
+// A bábu helyzete mozgás közben: melyik két mező között jár, és hol tart (p: 0..1).
+// null, ha a mozgás véget ért; ekkor a bábu a szerver szerinti mezőn áll.
+export function pawnState(action, start, now) {
+  if (!action.moves.length) return null;
+  let t = now - start - (action.dice ? DICE_TIME : 0);
+  const first = action.moves[0].from;
+  if (t < 0) return { from: first, to: first, p: 0, jump: false };
+  for (const m of action.moves) {
+    const duration = moveTime(m);
+    if (t < duration) {
+      if (m.type === 'jump') return { from: m.from, to: m.to, p: t / duration, jump: true };
+      const s = t / STEP_TIME;
+      const done = Math.floor(s);
+      const a = wrap(m.from + Math.sign(m.steps) * done);
+      return { from: a, to: wrap(a + Math.sign(m.steps)), p: s - done, jump: false };
+    }
+    t -= duration;
+  }
+  return null;
+}
+
+// melyik mezőn látszik a bábu (a panelhez és a kamerához)
+export function shownField(player, action, now) {
+  const state = action && action.player_id === player.id ? pawnState(action, action.start, now) : null;
+  if (!state) return player.position;
+  return state.p < 0.5 ? state.from : state.to;
 }

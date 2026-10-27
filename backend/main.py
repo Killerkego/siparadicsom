@@ -1,12 +1,15 @@
-"""Síparadicsom backend: játék létrehozása kóddal, csatlakozás, lobbi, indítás és a dobások.
+"""Síparadicsom backend: játék létrehozása kóddal, csatlakozás, lobbi, indítás, dobások és a
+speciális mezők szabályai.
 
 A frontend `npm run dev` parancsa magától elindítja. Külön futtatás a projekt gyökeréből:
     backend/.venv/Scripts/python -m uvicorn main:app --app-dir backend --port 8000 --reload --reload-dir backend
 """
 
+import json
 import secrets
 import time
 import uuid
+from pathlib import Path
 from typing import Annotated
 
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
@@ -14,17 +17,48 @@ from pydantic import BaseModel, StringConstraints
 
 MIN_PLAYERS = 1  # tesztelés miatt egyedül is indítható; a kész játékhoz állítsd 2-re
 MAX_PLAYERS = 6
-FIELD_COUNT = 40
 CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"  # nincs benne 0/O és 1/I, hogy ne lehessen összekeverni
 CODE_LENGTH = 6
 PAWN_COLORS = ["#d63031", "#0984e3", "#00b894", "#fdcb6e", "#6c5ce7", "#e17055"]
-# a dobás animációjának hossza; egyezzen a frontend/src/game/timing.js értékeivel
+
+# A tábla mezői ugyanabból a fájlból, amiből a frontend rajzol
+BOARD = json.loads(
+    (Path(__file__).resolve().parent.parent / "frontend" / "src" / "data" / "board.json").read_text(encoding="utf-8")
+)["fields"]
+FIELD_COUNT = len(BOARD)
+LIFTS = [f["id"] for f in BOARD if f.get("special") == "felvono"]
+
+# Szabályok, pénz: Hókristály Kredit (HK). A frontend is innen veszi az összegeket.
+RULES = {
+    "start_money": 6000,
+    "start_bonus": 2000,  # a START-on áthaladva vagy rálépve
+    "race_prize": 1000,  # síverseny győztesének a banktól
+    "gamble_prize": 1500,  # gambling: 4-5-6 dobásnál
+    "gamble_back": 5,  # gambling: 1-2-3 dobásnál ennyi mezőt vissza
+    "lift_cost": 500,  # felvonó: ennyiért visz át egy másik felvonóhoz
+    "school_pay": 300,  # oktatás: amíg nem dob párosat, minden köre elején ennyit kap
+    "trap_back": 3,  # csapda: ennyi mezőt vissza
+    "trap_money": 800,  # csapda: ennyit fizet a csapda lerakójának
+}
+
+# a mozgások animációjának hossza; egyezzen a frontend/src/game/timing.js értékeivel
 DICE_MS = 1200
 STEP_MS = 300
+JUMP_MS = 900
 
 
 def now_ms() -> int:
     return int(time.time() * 1000)
+
+
+def dice() -> int:
+    return secrets.randbelow(6) + 1
+
+
+def dobott(value: int) -> str:
+    """'dobott' elé a szám tárgyragos alakja: 1-et, 2-t, 3-at, ..."""
+    return {1: "1-et", 2: "2-t", 3: "3-at", 4: "4-et", 5: "5-öt", 6: "6-ot"}[value] + " dobott"
+
 
 app = FastAPI(title="Síparadicsom")
 
@@ -43,6 +77,11 @@ class PlayerRef(BaseModel):
     player_id: str
 
 
+class ChoiceIn(BaseModel):
+    player_id: str
+    choice: str
+
+
 def new_code() -> str:
     while True:
         code = "".join(secrets.choice(CODE_ALPHABET) for _ in range(CODE_LENGTH))
@@ -53,7 +92,14 @@ def new_code() -> str:
 def new_player(game: dict | None, name: str) -> dict:
     used = {p["color"] for p in game["players"]} if game else set()
     color = next(c for c in PAWN_COLORS if c not in used)
-    return {"id": uuid.uuid4().hex, "name": name, "color": color, "position": 0}
+    return {
+        "id": uuid.uuid4().hex,
+        "name": name,
+        "color": color,
+        "position": 0,
+        "money": RULES["start_money"],
+        "in_school": False,
+    }
 
 
 def get_game(code: str) -> dict:
@@ -61,6 +107,10 @@ def get_game(code: str) -> dict:
     if game is None:
         raise HTTPException(404, "Nincs ilyen kódú játék.")
     return game
+
+
+def find_player(game: dict, player_id: str) -> dict | None:
+    return next((p for p in game["players"] if p["id"] == player_id), None)
 
 
 def public_state(game: dict) -> dict:
@@ -71,8 +121,12 @@ def public_state(game: dict) -> dict:
         "host_id": game["host_id"],
         "players": players,
         "turn_player_id": players[game["turn"]]["id"] if game["status"] == "playing" else None,
-        # az utolsó dobás; az "at" időponthoz igazítva mindenkinél egyszerre fut az animáció
-        "last_roll": game["last_roll"],
+        # az utolsó mozgás (dobás és/vagy lépések); az "at" időponthoz igazítva mindenkinél egyszerre fut
+        "last_action": game["last_action"],
+        "pending": game["pending"],  # döntésre váró mező: gamble / lift / trap
+        "traps": game["traps"],  # mező sorszáma (szövegként) -> ki rakta le és milyet
+        "log": game["log"],
+        "rules": RULES,
         "server_time": now_ms(),  # ebből számolja a kliens, mennyit siet/késik az órája
         "min_players": MIN_PLAYERS,
         "max_players": MAX_PLAYERS,
@@ -94,6 +148,111 @@ def joined_response(game: dict, player: dict) -> dict:
     return {"player_id": player["id"], "game": public_state(game)}
 
 
+# --- játékmenet ---
+
+
+def add_log(game: dict, text: str) -> None:
+    game["log"] = (game["log"] + [text])[-8:]
+
+
+def action_duration(action: dict) -> int:
+    moves = sum(JUMP_MS if m["type"] == "jump" else abs(m["steps"]) * STEP_MS for m in action["moves"])
+    return (DICE_MS if action["dice"] else 0) + moves
+
+
+def animating(game: dict) -> bool:
+    action = game["last_action"]
+    return action is not None and now_ms() < action["at"] + action_duration(action)
+
+
+def record_action(game: dict, player: dict, dice_value: int | None, moves: list[dict]) -> None:
+    """Elmenti a mozgást, amit minden böngésző ugyanabban az időben lejátszik."""
+    if dice_value is None and not moves:
+        return
+    game["last_action"] = {
+        "seq": (game["last_action"] or {}).get("seq", 0) + 1,
+        "at": now_ms(),
+        "player_id": player["id"],
+        "dice": dice_value,
+        "moves": moves,
+    }
+
+
+def walk(game: dict, player: dict, steps: int) -> dict:
+    """Előre (pozitív) vagy hátra (negatív) lépteti a bábut. Előre a START-on át bónusz jár."""
+    start = player["position"]
+    if steps > 0 and start + steps >= FIELD_COUNT:
+        player["money"] += RULES["start_bonus"]
+        add_log(game, f"{player['name']} áthaladt a START-on: +{RULES['start_bonus']} HK.")
+    player["position"] = (start + steps) % FIELD_COUNT
+    return {"type": "walk", "from": start, "steps": steps}
+
+
+def end_turn(game: dict) -> None:
+    game["pending"] = None
+    game["turn"] = (game["turn"] + 1) % len(game["players"])
+
+
+def ski_race(game: dict) -> None:
+    """Síverseny: mindenki dob, a legmagasabb nyer; döntetlennél az élen állók újra dobnak."""
+    contenders = game["players"]
+    rounds = []
+    while True:
+        rolls = {p["id"]: dice() for p in contenders}
+        rounds.append(", ".join(f"{p['name']} {rolls[p['id']]}" for p in contenders))
+        best = max(rolls.values())
+        contenders = [p for p in contenders if rolls[p["id"]] == best]
+        if len(contenders) == 1:
+            break
+    winner = contenders[0]
+    winner["money"] += RULES["race_prize"]
+    add_log(game, f"Síverseny! {' | '.join(rounds)} → {winner['name']} nyert, +{RULES['race_prize']} HK.")
+
+
+def land(game: dict, player: dict, moves: list[dict]) -> None:
+    """A mező hatása, ahová a bábu a dobás után érkezett. Döntésnél a `pending`-be kerül."""
+    pos = player["position"]
+    special = BOARD[pos].get("special")
+    name = player["name"]
+    if special == "oktatas":
+        player["in_school"] = True
+        add_log(game, f"{name} oktatásra került: páros dobással mehet tovább, addig minden körben +{RULES['school_pay']} HK.")
+    elif special == "siverseny":
+        ski_race(game)
+    elif special == "gambling":
+        game["pending"] = {"type": "gamble", "player_id": player["id"]}
+    elif special == "felvono":
+        game["pending"] = {"type": "lift", "player_id": player["id"], "targets": [f for f in LIFTS if f != pos]}
+    elif special == "csapda":
+        trap = game["traps"].get(str(pos))
+        owner = trap and find_player(game, trap["owner"])
+        if owner and owner["id"] != player["id"]:
+            del game["traps"][str(pos)]
+            if trap["kind"] == "back":
+                moves.append(walk(game, player, -RULES["trap_back"]))
+                add_log(game, f"{name} {owner['name']} csapdájába lépett: {RULES['trap_back']} mezőt vissza.")
+            else:
+                player["money"] -= RULES["trap_money"]
+                owner["money"] += RULES["trap_money"]
+                add_log(game, f"{name} {owner['name']} csapdájába lépett: {RULES['trap_money']} HK-t fizet neki.")
+        else:
+            game["pending"] = {"type": "trap", "player_id": player["id"]}
+
+
+def acting_player(game: dict, player_id: str) -> dict:
+    if game["status"] != "playing":
+        raise HTTPException(409, "A játék még nem indult el.")
+    player = game["players"][game["turn"]]
+    if player["id"] != player_id:
+        raise HTTPException(403, "Nem te következel.")
+    if animating(game):
+        raise HTTPException(409, "Még tart az előző lépés.")
+    return player
+
+
+# --- végpontok ---
+
+
 @app.post("/api/games")
 async def create_game(body: PlayerIn):
     code = new_code()
@@ -104,7 +263,10 @@ async def create_game(body: PlayerIn):
         "host_id": player["id"],
         "players": [player],
         "turn": 0,
-        "last_roll": None,
+        "last_action": None,
+        "pending": None,
+        "traps": {},
+        "log": [],
     }
     return joined_response(games[code], player)
 
@@ -146,28 +308,82 @@ async def start_game(code: str, body: PlayerRef):
 
 @app.post("/api/games/{code}/roll")
 async def roll_dice(code: str, body: PlayerRef):
-    """A soron következő játékos dob; a szerver sorsol, lépteti a bábut és továbbadja a kört."""
+    """A soron következő játékos dob; a szerver sorsol, lépteti a bábut és alkalmazza a mezőt."""
     game = get_game(code)
-    if game["status"] != "playing":
-        raise HTTPException(409, "A játék még nem indult el.")
-    player = game["players"][game["turn"]]
-    if player["id"] != body.player_id:
-        raise HTTPException(403, "Nem te következel.")
-    last = game["last_roll"]
-    if last and now_ms() < last["at"] + DICE_MS + last["value"] * STEP_MS:
-        raise HTTPException(409, "Még tart az előző lépés.")
-    value = secrets.randbelow(6) + 1
-    start = player["position"]
-    player["position"] = (start + value) % FIELD_COUNT
-    game["last_roll"] = {
-        "seq": (last or {}).get("seq", 0) + 1,
-        "player_id": player["id"],
-        "value": value,
-        "from": start,
-        "to": player["position"],
-        "at": now_ms(),
-    }
-    game["turn"] = (game["turn"] + 1) % len(game["players"])
+    player = acting_player(game, body.player_id)
+    if game["pending"]:
+        raise HTTPException(409, "Előbb dönts a mezőn.")
+    value = dice()
+    moves = []
+    if player["in_school"]:
+        # oktatás: a kör elején fix összeg, és csak páros dobással mehet tovább
+        player["money"] += RULES["school_pay"]
+        if value % 2:
+            add_log(game, f"{player['name']} oktatáson: +{RULES['school_pay']} HK, {dobott(value)} (páratlan), marad.")
+            record_action(game, player, value, moves)
+            end_turn(game)
+            await broadcast(game)
+            return public_state(game)
+        player["in_school"] = False
+        add_log(game, f"{player['name']} oktatáson: +{RULES['school_pay']} HK, {dobott(value)} (páros), mehet tovább.")
+    moves.append(walk(game, player, value))
+    land(game, player, moves)
+    record_action(game, player, value, moves)
+    if not game["pending"]:
+        end_turn(game)
+    await broadcast(game)
+    return public_state(game)
+
+
+@app.post("/api/games/{code}/choose")
+async def choose(code: str, body: ChoiceIn):
+    """Döntés a speciális mezőn (gambling, felvonó, csapda), utána a következő játékos jön."""
+    game = get_game(code)
+    player = acting_player(game, body.player_id)
+    pending = game["pending"]
+    if not pending:
+        raise HTTPException(409, "Most nincs mit eldönteni.")
+    name = player["name"]
+    choice = body.choice
+
+    if pending["type"] == "gamble":
+        if choice == "no":
+            add_log(game, f"{name} nem kockáztatott a gamblingon.")
+        elif choice == "yes":
+            value = dice()
+            moves = []
+            if value <= 3:
+                moves.append(walk(game, player, -RULES["gamble_back"]))
+                add_log(game, f"{name} kockáztatott, {dobott(value)}: bukta, {RULES['gamble_back']} mezőt vissza.")
+            else:
+                player["money"] += RULES["gamble_prize"]
+                add_log(game, f"{name} kockáztatott, {dobott(value)}: nyert, +{RULES['gamble_prize']} HK.")
+            record_action(game, player, value, moves)
+        else:
+            raise HTTPException(422, "Igen vagy nem?")
+
+    elif pending["type"] == "lift":
+        if choice == "no":
+            add_log(game, f"{name} nem szállt fel a felvonóra.")
+        else:
+            target = int(choice) if choice.isdigit() else None
+            if target not in pending["targets"]:
+                raise HTTPException(422, "Nincs ilyen felvonó.")
+            if player["money"] < RULES["lift_cost"]:
+                raise HTTPException(409, "Nincs elég pénzed a felvonóra.")
+            player["money"] -= RULES["lift_cost"]
+            moves = [{"type": "jump", "from": player["position"], "to": target}]
+            player["position"] = target
+            record_action(game, player, None, moves)
+            add_log(game, f"{name} felvonóval átment a #{target} mezőre (-{RULES['lift_cost']} HK).")
+
+    elif pending["type"] == "trap":
+        if choice not in ("back", "money"):
+            raise HTTPException(422, "Mezők vissza vagy pénz?")
+        game["traps"][str(player["position"])] = {"owner": player["id"], "kind": choice}
+        add_log(game, f"{name} csapdát rakott a #{player['position']} mezőre.")
+
+    end_turn(game)
     await broadcast(game)
     return public_state(game)
 
@@ -185,6 +401,9 @@ async def leave_game(code: str, body: PlayerRef):
         return {"ok": True}
     if game["host_id"] == body.player_id:
         game["host_id"] = game["players"][0]["id"]  # a következő játékos lesz a házigazda
+    if game["pending"] and game["pending"]["player_id"] == body.player_id:
+        game["pending"] = None
+    game["traps"] = {f: t for f, t in game["traps"].items() if t["owner"] != body.player_id}
     # a kör annál marad, aki eddig is következett volna
     if index < game["turn"]:
         game["turn"] -= 1
