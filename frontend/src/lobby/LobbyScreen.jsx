@@ -16,8 +16,8 @@ export default function LobbyScreen({ game, playerId, onStart, onLeave }) {
   };
 
   return (
-    <main className="page">
-      <div className="card">
+    <main className="page lobby-page">
+      <div className="card lobby-card">
         <h1>Lobbi</h1>
 
         <div className="code-box">
