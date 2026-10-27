@@ -587,6 +587,98 @@ body {
   text-align: center;
 }
 
+.lobby-page {
+  background:
+    radial-gradient(ellipse at 50% 0%, #fffdf8 0%, transparent 58%),
+    linear-gradient(145deg, #f8f5ee, #e9dfcf);
+}
+
+.lobby-card {
+  border: 1px solid rgba(255, 255, 255, 0.88);
+  background: #fffdf9;
+  box-shadow: 0 18px 48px rgba(97, 77, 43, 0.15);
+}
+
+.lobby-card h1 {
+  color: #a77f3d;
+  font-family: 'Parisienne', 'Cormorant Garamond', cursive;
+  font-size: 46px;
+  font-weight: 400;
+}
+
+.lobby-card h2 {
+  color: #987039;
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 22px;
+  font-weight: 600;
+}
+
+.lobby-card input:focus {
+  outline-color: #c6a363;
+}
+
+.lobby-card .code-box {
+  border: 1px solid #e8dcc5;
+  background: linear-gradient(145deg, #faf5ea, #f3ead9);
+}
+
+.lobby-card .code-box span {
+  color: #a17b3d;
+}
+
+.lobby-card .code-box strong {
+  color: #987039;
+  font-family: 'Cormorant Garamond', Georgia, serif;
+}
+
+.lobby-card .hint,
+.lobby-card .muted {
+  color: #8d8578;
+}
+
+.lobby-card .players li {
+  border-bottom-color: #eee6d9;
+  color: #514633;
+}
+
+.lobby-card .badge {
+  background: #f3ead9;
+  color: #806334;
+}
+
+.lobby-card .badge.me {
+  background: #aa8546;
+  color: #fffdf9;
+}
+
+.lobby-card .btn {
+  border: 1px solid #ad8747;
+  background: linear-gradient(135deg, #bd9a5d, #9b7537);
+  box-shadow: 0 5px 14px rgba(153, 114, 51, 0.16);
+}
+
+.lobby-card .btn:not(:disabled):hover {
+  background: linear-gradient(135deg, #aa8546, #89652f);
+  box-shadow: 0 8px 18px rgba(153, 114, 51, 0.24);
+}
+
+.lobby-card .btn:disabled {
+  border-color: #d7cdbb;
+  background: #d7cdbb;
+  box-shadow: none;
+}
+
+.lobby-card .btn.secondary {
+  border-color: #e9dfce;
+  background: #f5efe4;
+  color: #806334;
+  box-shadow: none;
+}
+
+.lobby-card .btn.secondary:not(:disabled):hover {
+  background: #eee3d1;
+}
+
 @media (max-width: 760px) {
   .home-page {
     padding: 18px;
@@ -612,6 +704,7 @@ body {
     width: 100%;
     padding: 36px;
   }
+
 }
 
 @media (max-width: 420px) {
