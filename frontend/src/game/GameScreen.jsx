@@ -3,6 +3,7 @@ import { Canvas } from '@react-three/fiber';
 import Board from '../board/Board';
 import FixedCamera from '../board/FixedCamera';
 import Scenery from '../scenery/Scenery';
+import Sky, { HORIZON_COLOR } from '../scenery/Sky';
 import Dice from './Dice';
 import Pawn from './Pawn';
 import { DICE_TIME, actionEnd, actionStart, shownField } from './timing';
@@ -240,24 +241,26 @@ export default function GameScreen({ game, playerId, onRoll, onChoose, onLeave }
 
   return (
     <>
-      <Canvas shadows="percentage" flat dpr={[1, 2]} camera={{ fov: 40, near: 0.5, far: 200 }}>
-        <color attach="background" args={['#cfe2f0']} />
-        <fog attach="fog" args={['#cfe2f0', 45, 110]} />
+      <Canvas shadows="percentage" dpr={[1, 2]} camera={{ fov: 55, near: 0.5, far: 400 }}>
+        {/* meseszerű pára: a távoli hegyek a horizont rózsaszínjébe halványulnak */}
+        <fog attach="fog" args={[HORIZON_COLOR, 90, 300]} />
+        <Sky />
         <FixedCamera side={Math.floor(focusField / 10)} />
-        <hemisphereLight args={['#eaf4ff', '#b9c7d4', 0.75]} />
+        <hemisphereLight args={['#e8f0f8', '#f4eee8', 1.25]} />
         <directionalLight
-          position={[-9, 18, 10]}
-          intensity={1.5}
+          position={[-28, 24, 6]}
+          color="#fff0db"
+          intensity={2.2}
           castShadow
           shadow-mapSize={[2048, 2048]}
           shadow-bias={-0.0004}
           shadow-normalBias={0.03}
-          shadow-camera-left={-32}
-          shadow-camera-right={32}
-          shadow-camera-top={32}
-          shadow-camera-bottom={-32}
+          shadow-camera-left={-35}
+          shadow-camera-right={35}
+          shadow-camera-top={35}
+          shadow-camera-bottom={-35}
           shadow-camera-near={1}
-          shadow-camera-far={60}
+          shadow-camera-far={90}
         />
         <Suspense fallback={null}>
           <Scenery />
