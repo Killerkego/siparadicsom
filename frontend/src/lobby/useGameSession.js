@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { createGame, joinGame, leaveGame, rollDice, startGame } from './api';
+import { chooseOption, createGame, joinGame, leaveGame, rollDice, startGame } from './api';
 
 // sessionStorage: oldalfrissítés után is megmarad, de böngészőfülenként külön játékos lehet
 const STORAGE_KEY = 'siparadicsom-session';
@@ -62,6 +62,7 @@ export function useGameSession() {
     // a válaszból azonnal frissül, nem kell megvárni a WebSocket üzenetet
     start: async () => setGame(await startGame(session.code, session.playerId)),
     roll: async () => setGame(await rollDice(session.code, session.playerId)),
+    choose: async (choice) => setGame(await chooseOption(session.code, session.playerId, choice)),
     leave: async () => {
       await leaveGame(session.code, session.playerId).catch(() => {});
       saveSession(null);
