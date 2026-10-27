@@ -39,7 +39,24 @@ RULES = {
     "school_pay": 300,  # oktatás: amíg nem dob párosat, minden köre elején ennyit kap
     "trap_back": 3,  # csapda: ennyi mezőt vissza
     "trap_money": 800,  # csapda: ennyit fizet a csapda lerakójának
+    "shop_discount": 30,  # vásárlási mezőn ennyi % kedvezmény az aznapi építkezésre
+    "win_money": 5000,  # győzelemhez: minden elem megépítve és legalább ennyi pénz (tartozás nélkül)
 }
+
+# A felépítendő síparadicsom elemei. A játékos minden köre végén legfeljebb egyet vehet meg,
+# ha van rá pénze, megvannak az előfeltételei és még nincs meg neki. Összesen 26 000 HK,
+# a kezdőtőke ennek kb. 23%-a.
+BUILDINGS = [
+    {"id": "palya", "name": "Pályarendszer", "price": 2000, "requires": []},
+    {"id": "szalloda", "name": "Szálloda", "price": 4500, "requires": []},
+    {"id": "felvono", "name": "Felvonó", "price": 3500, "requires": ["palya"]},
+    {"id": "etterem", "name": "Étterem", "price": 2500, "requires": ["szalloda"]},
+    {"id": "wellness", "name": "Wellness és spa", "price": 3500, "requires": ["szalloda"]},
+    {"id": "bar", "name": "Luxusbár", "price": 2500, "requires": ["etterem"]},
+    {"id": "lakosztaly", "name": "Luxus lakosztályok", "price": 4000, "requires": ["szalloda", "wellness"]},
+    {"id": "helipad", "name": "Helikopter-leszállópálya", "price": 3500, "requires": ["szalloda", "felvono"]},
+]
+BUILDING_BY_ID = {b["id"]: b for b in BUILDINGS}
 
 # a mozgások animációjának hossza; egyezzen a frontend/src/game/timing.js értékeivel
 DICE_MS = 1200
@@ -99,6 +116,7 @@ def new_player(game: dict | None, name: str) -> dict:
         "position": 0,
         "money": RULES["start_money"],
         "in_school": False,
+        "buildings": [],  # a megépített elemek azonosítói, vásárlási sorrendben
     }
 
 
@@ -117,16 +135,18 @@ def public_state(game: dict) -> dict:
     players = game["players"]
     return {
         "code": game["code"],
-        "status": game["status"],  # "lobby" vagy "playing"
+        "status": game["status"],  # "lobby", "playing" vagy "finished"
         "host_id": game["host_id"],
         "players": players,
         "turn_player_id": players[game["turn"]]["id"] if game["status"] == "playing" else None,
+        "winner_id": game["winner_id"],
         # az utolsó mozgás (dobás és/vagy lépések); az "at" időponthoz igazítva mindenkinél egyszerre fut
         "last_action": game["last_action"],
-        "pending": game["pending"],  # döntésre váró mező: gamble / lift / trap
+        "pending": game["pending"],  # döntésre vár: gamble / lift / trap mező vagy build (építkezés a kör végén)
         "traps": game["traps"],  # mező sorszáma (szövegként) -> ki rakta le és milyet
         "log": game["log"],
         "rules": RULES,
+        "buildings": BUILDINGS,
         "server_time": now_ms(),  # ebből számolja a kliens, mennyit siet/késik az órája
         "min_players": MIN_PLAYERS,
         "max_players": MAX_PLAYERS,
@@ -193,6 +213,46 @@ def end_turn(game: dict) -> None:
     game["turn"] = (game["turn"] + 1) % len(game["players"])
 
 
+def build_price(building: dict, discount: int) -> int:
+    """a vételár a kedvezménnyel, 50 HK-ra kerekítve"""
+    return round(building["price"] * (100 - discount) / 100 / 50) * 50
+
+
+def build_problem(player: dict, building: dict, discount: int) -> str | None:
+    """Miért nem veheti meg most a játékos az elemet (None, ha megveheti)."""
+    if building["id"] in player["buildings"]:
+        return f"A(z) {building['name']} már megvan."
+    missing = [BUILDING_BY_ID[r]["name"] for r in building["requires"] if r not in player["buildings"]]
+    if missing:
+        return f"A(z) {building['name']} előfeltétele: {', '.join(missing)}."
+    if player["money"] < build_price(building, discount):
+        return f"Nincs elég pénzed: a(z) {building['name']} {build_price(building, discount)} HK."
+    return None
+
+
+def finish_turn(game: dict, player: dict) -> None:
+    """A kör vége: ha van megvehető elem, a játékos dönthet róla, különben jön a következő."""
+    discount = RULES["shop_discount"] if BOARD[player["position"]]["type"] == "vasarlas" else 0
+    options = [b["id"] for b in BUILDINGS if build_problem(player, b, discount) is None]
+    if options:
+        game["pending"] = {"type": "build", "player_id": player["id"], "discount": discount, "options": options}
+        return
+    if discount:
+        add_log(game, f"{player['name']} vásárlási mezőn áll, de most nincs megvehető építési elem.")
+    close_turn(game, player)
+
+
+def close_turn(game: dict, player: dict) -> None:
+    """Győzelem ellenőrzése a kör végén, utána körváltás."""
+    if len(player["buildings"]) == len(BUILDINGS) and player["money"] >= RULES["win_money"]:
+        game["status"] = "finished"
+        game["winner_id"] = player["id"]
+        game["pending"] = None
+        add_log(game, f"{player['name']} felépítette a teljes síparadicsomot és nyert!")
+        return
+    end_turn(game)
+
+
 def ski_race(game: dict) -> None:
     """Síverseny: mindenki dob, a legmagasabb nyer; döntetlennél az élen állók újra dobnak."""
     contenders = game["players"]
@@ -240,6 +300,8 @@ def land(game: dict, player: dict, moves: list[dict]) -> None:
 
 
 def acting_player(game: dict, player_id: str) -> dict:
+    if game["status"] == "finished":
+        raise HTTPException(409, "A játék véget ért.")
     if game["status"] != "playing":
         raise HTTPException(409, "A játék még nem indult el.")
     player = game["players"][game["turn"]]
@@ -267,6 +329,7 @@ async def create_game(body: PlayerIn):
         "pending": None,
         "traps": {},
         "log": [],
+        "winner_id": None,
     }
     return joined_response(games[code], player)
 
@@ -321,7 +384,7 @@ async def roll_dice(code: str, body: PlayerRef):
         if value % 2:
             add_log(game, f"{player['name']} oktatáson: +{RULES['school_pay']} HK, {dobott(value)} (páratlan), marad.")
             record_action(game, player, value, moves)
-            end_turn(game)
+            finish_turn(game, player)
             await broadcast(game)
             return public_state(game)
         player["in_school"] = False
@@ -330,14 +393,14 @@ async def roll_dice(code: str, body: PlayerRef):
     land(game, player, moves)
     record_action(game, player, value, moves)
     if not game["pending"]:
-        end_turn(game)
+        finish_turn(game, player)
     await broadcast(game)
     return public_state(game)
 
 
 @app.post("/api/games/{code}/choose")
 async def choose(code: str, body: ChoiceIn):
-    """Döntés a speciális mezőn (gambling, felvonó, csapda), utána a következő játékos jön."""
+    """Döntés a speciális mezőn (gambling, felvonó, csapda), utána az építkezés, végül a következő játékos."""
     game = get_game(code)
     player = acting_player(game, body.player_id)
     pending = game["pending"]
@@ -345,6 +408,25 @@ async def choose(code: str, body: ChoiceIn):
         raise HTTPException(409, "Most nincs mit eldönteni.")
     name = player["name"]
     choice = body.choice
+
+    if pending["type"] == "build":
+        if choice == "no":
+            add_log(game, f"{name} most nem épített.")
+        else:
+            building = BUILDING_BY_ID.get(choice)
+            if building is None:
+                raise HTTPException(422, "Nincs ilyen építési elem.")
+            problem = build_problem(player, building, pending["discount"])
+            if problem:
+                raise HTTPException(409, problem)
+            price = build_price(building, pending["discount"])
+            player["money"] -= price
+            player["buildings"].append(building["id"])
+            sale = f", {pending['discount']}% kedvezménnyel" if pending["discount"] else ""
+            add_log(game, f"{name} megépítette: {building['name']} (-{price} HK{sale}).")
+        close_turn(game, player)
+        await broadcast(game)
+        return public_state(game)
 
     if pending["type"] == "gamble":
         if choice == "no":
@@ -383,7 +465,8 @@ async def choose(code: str, body: ChoiceIn):
         game["traps"][str(player["position"])] = {"owner": player["id"], "kind": choice}
         add_log(game, f"{name} csapdát rakott a #{player['position']} mezőre.")
 
-    end_turn(game)
+    game["pending"] = None
+    finish_turn(game, player)
     await broadcast(game)
     return public_state(game)
 

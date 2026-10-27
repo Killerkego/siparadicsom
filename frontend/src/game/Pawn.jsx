@@ -14,6 +14,7 @@ const SCALE = 0.65; // kisebb bábuk, hogy hatan is elférjenek egy mezőn
 // a talp színes csíkja ('Babu_jelolo') a játékos színe, így két egyforma figura is megkülönböztethető.
 const MODEL_URL = '/models/babuk.glb';
 const FIGURES = ['Babu_sielo', 'Babu_snowboard', 'Babu_hoember', 'Babu_kabin'];
+export const FIGURE_NAMES = ['Síelő', 'Snowboardos', 'Hóember', 'Gondola'];
 
 // Minden játékosnak saját helye van a mezőn belül (mező szerinti x, z), így nem fedik egymást.
 const SLOTS = [[-0.23, -0.45], [0.23, -0.45], [-0.23, 0.05], [0.23, 0.05], [-0.23, 0.55], [0.23, 0.55]];

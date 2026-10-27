@@ -339,3 +339,143 @@ body {
   margin: 0;
   color: #c62828;
 }
+
+/* építkezés a panelen */
+.build-options {
+  flex-direction: column;
+}
+
+.game-panel .build-options button {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  text-align: left;
+}
+
+.build-options .price {
+  font-weight: 700;
+  opacity: 0.85;
+}
+
+.build-options s {
+  opacity: 0.6;
+  font-weight: 400;
+}
+
+.build-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-top: 6px;
+  border-top: 1px solid #dde5ec;
+  font-size: 13px;
+}
+
+.build-list .progress {
+  height: 6px;
+  border-radius: 3px;
+  background: #dde5ec;
+  overflow: hidden;
+}
+
+.build-list .progress span {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, #d2b06a, #c9905a);
+  transition: width 0.6s;
+}
+
+.build-list ul {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 12px;
+}
+
+.build-list li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.build-list li .mark {
+  width: 14px;
+  text-align: center;
+}
+
+.build-list li .price {
+  margin-left: auto;
+  color: #7a8a97;
+}
+
+.build-list li.owned {
+  color: #2e7d4f;
+  font-weight: 700;
+}
+
+.build-list li.available .mark {
+  color: #c9905a;
+}
+
+.build-list li.locked {
+  color: #9aa7b2;
+}
+
+/* győzelem */
+.victory {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(31, 42, 51, 0.35);
+  backdrop-filter: blur(2px);
+}
+
+.victory-card {
+  min-width: 280px;
+  max-width: 360px;
+  padding: 24px 28px;
+  border-radius: 18px;
+  background: #fffdf8;
+  box-shadow: 0 12px 40px rgba(31, 42, 51, 0.3);
+  text-align: center;
+}
+
+.victory-card .trophy {
+  font-size: 44px;
+}
+
+.victory-card h2 {
+  margin: 4px 0 8px;
+  color: #2b4a63;
+}
+
+.victory-card p {
+  margin: 6px 0;
+}
+
+.victory-card ul {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px 12px;
+  margin: 10px 0 16px;
+  padding: 0;
+  list-style: none;
+  color: #2e7d4f;
+  font-size: 13px;
+  text-align: left;
+}
+
+.victory-card button {
+  padding: 10px 22px;
+  border: none;
+  border-radius: 10px;
+  background: #2b4a63;
+  color: #fff;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
