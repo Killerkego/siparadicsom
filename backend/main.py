@@ -16,6 +16,7 @@ from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from pydantic import BaseModel, StringConstraints
 
 MIN_PLAYERS = 1  # tesztelés miatt egyedül is indítható; a kész játékhoz állítsd 2-re
+DEV_MODE = True  # fejlesztői fül a játékban (bárhova lépés, minden épület); a kész játékhoz állítsd False-ra
 MAX_PLAYERS = 6
 CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"  # nincs benne 0/O és 1/I, hogy ne lehessen összekeverni
 CODE_LENGTH = 6
@@ -99,6 +100,11 @@ class ChoiceIn(BaseModel):
     choice: str
 
 
+class DevMoveIn(BaseModel):
+    player_id: str
+    field: int
+
+
 def new_code() -> str:
     while True:
         code = "".join(secrets.choice(CODE_ALPHABET) for _ in range(CODE_LENGTH))
@@ -150,6 +156,7 @@ def public_state(game: dict) -> dict:
         "server_time": now_ms(),  # ebből számolja a kliens, mennyit siet/késik az órája
         "min_players": MIN_PLAYERS,
         "max_players": MAX_PLAYERS,
+        "dev_mode": DEV_MODE,
     }
 
 
@@ -467,6 +474,56 @@ async def choose(code: str, body: ChoiceIn):
 
     game["pending"] = None
     finish_turn(game, player)
+    await broadcast(game)
+    return public_state(game)
+
+
+# --- fejlesztői végpontok (csak DEV_MODE esetén) ---
+
+
+def require_dev() -> None:
+    if not DEV_MODE:
+        raise HTTPException(403, "A fejlesztői mód ki van kapcsolva.")
+
+
+@app.post("/api/games/{code}/dev/move")
+async def dev_move(code: str, body: DevMoveIn):
+    """Dobás helyett a megadott mezőre ugrik; a mező hatása és a kör vége ugyanúgy jön, mint dobásnál."""
+    require_dev()
+    game = get_game(code)
+    player = acting_player(game, body.player_id)
+    if game["pending"]:
+        raise HTTPException(409, "Előbb dönts a mezőn.")
+    if not 0 <= body.field < FIELD_COUNT:
+        raise HTTPException(422, "Nincs ilyen mező.")
+    start = player["position"]
+    walk(game, player, (body.field - start) % FIELD_COUNT)  # előre megy, így a START-bónusz is jár
+    player["in_school"] = False
+    moves = [{"type": "jump", "from": start, "to": body.field}]
+    add_log(game, f"[fejlesztői] {player['name']} a #{body.field} mezőre lépett.")
+    land(game, player, moves)
+    record_action(game, player, None, moves)
+    if not game["pending"]:
+        finish_turn(game, player)
+    await broadcast(game)
+    return public_state(game)
+
+
+@app.post("/api/games/{code}/dev/build-all")
+async def dev_build_all(code: str, body: PlayerRef):
+    """Ingyen megépíti a játékos összes elemét."""
+    require_dev()
+    game = get_game(code)
+    player = find_player(game, body.player_id)
+    if player is None:
+        raise HTTPException(404, "Nincs ilyen játékos.")
+    if game["status"] != "playing":
+        raise HTTPException(409, "A játék nem fut.")
+    player["buildings"] = [b["id"] for b in BUILDINGS]
+    add_log(game, f"[fejlesztői] {player['name']} minden elemet megépített.")
+    pending = game["pending"]
+    if pending and pending["type"] == "build" and pending["player_id"] == player["id"]:
+        close_turn(game, player)  # nincs már mit építeni: győzelem ellenőrzése, körváltás
     await broadcast(game)
     return public_state(game)
 

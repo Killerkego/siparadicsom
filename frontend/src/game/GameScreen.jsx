@@ -5,6 +5,7 @@ import FixedCamera from '../board/FixedCamera';
 import Scenery from '../scenery/Scenery';
 import Sky, { HORIZON_COLOR } from '../scenery/Sky';
 import BuildSite from './BuildSite';
+import DevPanel from './DevPanel';
 import Dice from './Dice';
 import Pawn, { FIGURE_NAMES } from './Pawn';
 import { DICE_TIME, actionEnd, actionStart, shownField } from './timing';
@@ -247,7 +248,7 @@ function GamePanel({ game, settled, playerId, fieldOf, phase, busy, action, erro
   );
 }
 
-export default function GameScreen({ game, playerId, onRoll, onChoose, onLeave }) {
+export default function GameScreen({ game, playerId, onRoll, onChoose, onLeave, onDevMove, onDevBuildAll }) {
   const [hovered, setHovered] = useState(null);
   const fontsReady = useFontsReady();
   const [requesting, setRequesting] = useState(false);
@@ -375,6 +376,16 @@ export default function GameScreen({ game, playerId, onRoll, onChoose, onLeave }
         onChoose={choose}
         onLeave={onLeave}
       />
+      {game.dev_mode && game.status === 'playing' && (
+        <DevPanel
+          game={game}
+          me={me}
+          canMove={myTurn && !busy && !game.pending}
+          busy={busy}
+          onMove={(field) => send(() => onDevMove(field))}
+          onBuildAll={() => send(onDevBuildAll)}
+        />
+      )}
       {game.status === 'finished' && phase === 'idle' && (
         <Victory game={game} playerId={playerId} onLeave={onLeave} />
       )}

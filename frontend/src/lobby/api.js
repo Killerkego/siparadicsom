@@ -26,4 +26,7 @@ export const startGame = (code, playerId) => request('POST', `/games/${code}/sta
 export const rollDice = (code, playerId) => request('POST', `/games/${code}/roll`, { player_id: playerId });
 export const chooseOption = (code, playerId, choice) =>
   request('POST', `/games/${code}/choose`, { player_id: playerId, choice });
+// fejlesztői mód
+export const devMove = (code, playerId, field) => request('POST', `/games/${code}/dev/move`, { player_id: playerId, field });
+export const devBuildAll = (code, playerId) => request('POST', `/games/${code}/dev/build-all`, { player_id: playerId });
 export const leaveGame =(code, playerId) => request('POST', `/games/${code}/leave`, { player_id: playerId });

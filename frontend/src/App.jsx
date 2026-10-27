@@ -5,7 +5,7 @@ import { useGameSession } from './lobby/useGameSession';
 
 // Kezdőlap -> lobbi -> játéktábla, a szerveren tárolt játékállapot alapján
 export default function App() {
-  const { session, game, create, join, start, roll, choose, leave } = useGameSession();
+  const { session, game, create, join, start, roll, choose, leave, devMove, devBuildAll } = useGameSession();
 
   if (!session) return <HomeScreen onCreate={create} onJoin={join} />;
   if (!game) {
@@ -18,5 +18,15 @@ export default function App() {
   if (game.status === 'lobby') {
     return <LobbyScreen game={game} playerId={session.playerId} onStart={start} onLeave={leave} />;
   }
-  return <GameScreen game={game} playerId={session.playerId} onRoll={roll} onChoose={choose} onLeave={leave} />;
+  return (
+    <GameScreen
+      game={game}
+      playerId={session.playerId}
+      onRoll={roll}
+      onChoose={choose}
+      onLeave={leave}
+      onDevMove={devMove}
+      onDevBuildAll={devBuildAll}
+    />
+  );
 }
