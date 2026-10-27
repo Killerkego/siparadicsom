@@ -267,16 +267,18 @@ export default function GameScreen({ game, playerId, onRoll, onChoose, onLeave }
         </Suspense>
         {fontsReady && <Board fields={fields} onHover={setHovered} />}
         <Dice roll={diceRoll} disabled={busy || !myTurn || !!game.pending} onClick={rollDice} />
-        {game.players.map((p, i) => (
-          <Pawn
-            key={p.id}
-            field={p.position}
-            action={action?.player_id === p.id ? action : null}
-            slot={i}
-            color={p.color}
-            lifted={phase === 'idle' && hovered?.id === p.position}
-          />
-        ))}
+        <Suspense fallback={null}>
+          {game.players.map((p, i) => (
+            <Pawn
+              key={p.id}
+              field={p.position}
+              action={action?.player_id === p.id ? action : null}
+              slot={i}
+              color={p.color}
+              lifted={phase === 'idle' && hovered?.id === p.position}
+            />
+          ))}
+        </Suspense>
       </Canvas>
       <GamePanel
         game={game}
