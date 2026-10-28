@@ -26,7 +26,7 @@ CARDS = [
     {"id": "N02", "kind": "nyeremeny", "name": "Fesztivál", "text": "Kapsz 2200 HK-t."},
     {"id": "N03", "kind": "nyeremeny", "name": "Az év síterepe", "text": "Kapsz 2500 HK-t."},
     {"id": "N04", "kind": "nyeremeny", "name": "Ereklye eladása", "text": "Kapsz 1800 HK-t."},
-    {"id": "N05", "kind": "nyeremeny", "name": "Teltház", "text": "Kapsz 2400 HK-t. Ha van Szállodád vagy Apartmanod, kapsz még 600 HK-t."},
+    {"id": "N05", "kind": "nyeremeny", "name": "Teltház", "text": "Kapsz 2400 HK-t. Ha van Szállodád vagy Luxus lakosztályod, kapsz még 600 HK-t."},
     {"id": "N06", "kind": "nyeremeny", "name": "Nagyvonalú bank", "text": "Kapsz 1600 HK-t."},
     {"id": "N07", "kind": "nyeremeny", "name": "Olimpiai edzőtábor", "text": "Kapsz 2800 HK-t. Ha van Pályarendszered, kapsz még 500 HK-t."},
     {"id": "N08", "kind": "nyeremeny", "name": "Bajnokság", "text": "Kapsz 2000 HK-t."},

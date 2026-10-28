@@ -1,4 +1,4 @@
-építkezési rendszer: helikopter, felvonó, szálloda, pályarendszer, étterem, wellness és spa, apartmanok, luxusbar
+építkezési rendszer: helikopter, felvonó, szálloda, pályarendszer, étterem, wellness és spa, luxus lakosztályok, luxusbár
 gazdaság: Hókristály Kredit, szezonbérlet, 42000 a teljes, 10000 kezdő; bevételi mező +2200, kiadási mező -1300
 győzelmi feltételek: 8 épület, legalább 7000 HK, nincs tartozás
 tábla: 40 mező,
