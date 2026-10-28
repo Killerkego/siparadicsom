@@ -6,7 +6,7 @@ START (Völgyállomás) 1 |+2000
 Bevételi 7 |Síoktatás, Sífelszerelés-kölcsönző
 Kiadási 7 |Pályakarbantartás, Biztosítás
 Kártyahúzó 6 |„Hegyi hírek” (legalább 4 kötelező)
-Vásárlási 4 |Építőanyag-vásár: −20% a következő elemre
+Vásárlási 4 |Építőanyag-vásár: −30% az aznapi (kör végi) építkezésre
 Semleges 4 |Kilátópont, Pihenő
 Speciális 11 |
 kártya felépítés: pozitív, negatív

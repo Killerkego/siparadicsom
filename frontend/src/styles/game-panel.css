@@ -1,267 +1,926 @@
-/* a jobb felső játékpanel: dobás, döntések, napló, csapdák */
+/* A játék felületei a kezdőlap stílusában: krém lap, aranybarna Cormorant címek, „✦ … ✦” feliratok,
+   arany gombok; a lebegő sávok sötét üvegen arany kerettel (mint a kezdőlap „Találkozzunk…” felirata). */
+:root {
+  --hud-cream: #fffdf9;
+  --hud-cream-2: #faf5ea;
+  --hud-cream-3: #f3ead9;
+  --hud-line: #ece2d0;
+  --hud-gold: #a17b3d;
+  --hud-gold-soft: #c19b58;
+  --hud-heading: #987039;
+  --hud-text: #514633;
+  --hud-muted: #8d8578;
+  --hud-red: #b0603f;
+  --hud-glass: rgba(31, 35, 38, 0.62);
+  --hud-glass-line: rgba(226, 196, 137, 0.72);
+  --hud-button: linear-gradient(135deg, #bd9a5d, #9b7537);
+  --hud-button-hover: linear-gradient(135deg, #aa8546, #89652f);
+}
+
+/* ===== jobb oldali panel ===== */
 .game-panel {
   position: absolute;
-  top: 16px;
-  right: 16px;
+  top: 12px;
+  right: 12px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  min-width: 190px;
-  max-width: 290px;
-  max-height: calc(100% - 32px);
-  overflow-y: auto;
+  width: 300px;
+  max-height: calc(100% - 24px);
   box-sizing: border-box;
-  padding: 14px 16px;
-  background: rgba(255, 255, 255, 0.88);
-  border-radius: 14px;
-  box-shadow: 0 6px 24px rgba(31, 42, 51, 0.18);
-  backdrop-filter: blur(6px);
-  font-size: 14px;
+  overflow: hidden;
+  border: 1px solid var(--hud-line);
+  border-radius: 18px;
+  background: radial-gradient(ellipse at 50% 0%, #fffefb 0%, var(--hud-cream) 45%, var(--hud-cream-2) 100%);
+  box-shadow: 0 18px 48px rgba(97, 77, 43, 0.22), inset 0 0 0 4px rgba(255, 255, 255, 0.6);
+  color: var(--hud-text);
+  font-size: 13px;
   user-select: none;
 }
 
+/* fenyőfa léc aranyvonallal, mint a tábla kerete és a játékoskártyák */
+.game-panel::before {
+  content: '';
+  flex: none;
+  height: 6px;
+  background: url('/textures/fenyo.png') center / 180px auto, #d9b07c;
+  box-shadow: 0 1px 0 #d2b06a;
+}
+
 .game-panel button {
-  padding: 10px 14px;
   border: none;
-  border-radius: 10px;
-  background: #2b4a63;
-  color: #fff;
   font: inherit;
-  font-size: 16px;
-  font-weight: 800;
   cursor: pointer;
 }
 
-.game-panel button:disabled {
-  background: #9fb0bd;
-  cursor: default;
+.panel-turn,
+.panel-tabs {
+  flex: none;
 }
 
-.game-panel .error {
-  color: #c62828;
-  font-size: 13px;
+/* fejléc: ki következik, és a legutóbbi dobás; rákattintva összecsukható */
+.panel-turn {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 14px 14px 14px 16px;
+  cursor: pointer;
 }
 
-.game-panel .money {
-  color: #52626f;
-  font-weight: 700;
+/* díszített elválasztó a fejléc alatt: vonal, középen arany csillag */
+.panel-turn::after {
+  content: '✦';
+  position: absolute;
+  right: 16px;
+  bottom: -7px;
+  left: 16px;
+  height: 14px;
+  background: linear-gradient(
+      90deg,
+      transparent,
+      var(--hud-line) 15%,
+      var(--hud-line) calc(50% - 12px),
+      transparent calc(50% - 12px),
+      transparent calc(50% + 12px),
+      var(--hud-line) calc(50% + 12px),
+      var(--hud-line) 85%,
+      transparent
+    )
+    center / 100% 1px no-repeat;
+  color: var(--hud-gold-soft);
+  font-size: 11px;
+  line-height: 14px;
+  text-align: center;
 }
 
-.game-panel .money.debt {
-  color: #c62828;
+.panel-turn:hover .turn-text b {
+  color: #82602d;
+}
+
+.panel-turn:focus-visible {
+  outline: 2px solid #c6a363;
+  outline-offset: -4px;
+  border-radius: 14px;
+}
+
+.turn-dot {
+  flex: none;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: var(--player, #c9bda8);
+  box-shadow: 0 0 0 3px var(--hud-cream), 0 0 0 4.5px var(--player, #c9bda8);
+}
+
+.turn-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.2;
+}
+
+.turn-text small,
+.last-roll small,
+.last-event small {
+  color: var(--hud-gold);
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 2.4px;
+  text-transform: uppercase;
+}
+
+.turn-text small span {
+  color: var(--hud-gold-soft);
+}
+
+.turn-text b {
+  overflow: hidden;
+  color: var(--hud-heading);
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: -0.3px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: color 160ms ease;
+}
+
+.turn-text em {
+  color: var(--hud-muted);
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.last-roll {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  margin-left: auto;
+  min-width: 46px;
+}
+
+.last-roll small {
+  max-width: 60px;
+  overflow: hidden;
+  color: var(--hud-muted);
+  font-size: 10px;
+  letter-spacing: 0.3px;
+  text-overflow: ellipsis;
+  text-transform: none;
+  white-space: nowrap;
+}
+
+/* kis kocka pöttyökkel */
+.die-tile {
+  display: grid;
+  grid-template: repeat(3, 1fr) / repeat(3, 1fr);
+  width: 30px;
+  height: 30px;
+  padding: 5px;
+  box-sizing: border-box;
+  border: 1px solid #dcc9a3;
+  border-radius: 8px;
+  background: linear-gradient(145deg, #ffffff, #f5ecda);
+  box-shadow: 0 2px 5px rgba(97, 77, 43, 0.18), inset 0 -2px 0 rgba(161, 123, 61, 0.12);
+}
+
+.die-tile i {
+  display: block;
+  place-self: center;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+}
+
+.die-tile i.pip {
+  background: #6b4f24;
+}
+
+.die-tile.empty {
+  opacity: 0.45;
+}
+
+/* összecsukó nyíl: nyitva felfelé (összecsukás), összecsukva lefelé (kinyitás) */
+.panel-chevron {
+  flex: none;
+  width: 9px;
+  height: 9px;
+  margin: 0 3px;
+  border-right: 2.5px solid var(--hud-gold-soft);
+  border-bottom: 2.5px solid var(--hud-gold-soft);
+  transform: translateY(3px) rotate(225deg);
+  transition: transform 200ms ease;
+}
+
+.game-panel.collapsed .panel-chevron {
+  transform: translateY(-3px) rotate(45deg);
+}
+
+/* tipp, hiba és a legutóbbi esemény */
+.panel-action {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px 16px 4px;
+}
+
+.panel-action:empty {
+  display: none;
 }
 
 .game-panel .hint {
-  color: #7a8a97;
-  font-size: 13px;
-}
-
-.decision {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding: 10px;
-  border-radius: 10px;
-  background: #eef4f8;
-}
-
-.decision p {
-  margin: 0;
-  font-size: 13px;
-}
-
-.decision .choices {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.decision .choices button {
-  flex: 1;
-  padding: 8px 10px;
-  font-size: 14px;
-}
-
-.game-panel button.secondary {
-  background: #ffffff;
-  color: #2b4a63;
-  box-shadow: inset 0 0 0 1px #c9d6e0;
-}
-
-.traps,
-.log {
-  padding-top: 6px;
-  border-top: 1px solid #dde5ec;
+  color: var(--hud-gold);
   font-size: 12px;
-  color: #52626f;
+  font-weight: 700;
 }
 
-.log {
+.game-panel .error,
+.decision-error {
+  margin: 0;
+  padding: 7px 10px;
+  border-radius: 9px;
+  background: #fbebe6;
+  color: #a8442f;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+/* a legutóbbi esemény mindig látszik */
+.last-event {
   display: flex;
   flex-direction: column;
+  gap: 2px;
+  padding: 9px 12px 10px;
+  border: 1px solid var(--hud-line);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.7);
+  color: var(--hud-text);
+  font-size: 12.5px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+/* fülek: krém sínen arany kiemelés */
+.panel-tabs {
+  display: flex;
   gap: 4px;
-  margin: 0;
-  padding-left: 0;
-  list-style: none;
+  margin: 12px 16px 0;
+  padding: 4px;
+  border: 1px solid var(--hud-line);
+  border-radius: 12px;
+  background: var(--hud-cream-3);
 }
 
-.log li:first-child {
-  color: #1f2a33;
-  font-weight: 700;
-}
-
-.game-panel .game-code {
-  padding-top: 6px;
-  border-top: 1px solid #dde5ec;
-}
-
-.game-panel button.leave {
-  padding: 2px 8px;
-  font-size: 12px;
-  font-weight: 700;
-}
-
-/* építkezés a panelen */
-.build-options {
-  flex-direction: column;
-}
-
-.game-panel .build-options button {
+.panel-tabs button {
   display: flex;
-  justify-content: space-between;
-  gap: 8px;
-  text-align: left;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 7px 4px;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--hud-muted);
+  font-size: 12.5px;
+  font-weight: 800;
+  transition: background 160ms ease, color 160ms ease;
 }
 
-.build-options .price {
-  font-weight: 700;
-  opacity: 0.85;
+.panel-tabs button:hover {
+  color: var(--hud-heading);
 }
 
-.build-options s {
-  opacity: 0.6;
-  font-weight: 400;
+.panel-tabs button.active {
+  background: var(--hud-cream);
+  box-shadow: 0 2px 6px rgba(97, 77, 43, 0.14);
+  color: var(--hud-heading);
 }
 
+.panel-tabs .badge {
+  padding: 1px 6px;
+  border-radius: 6px;
+  background: #e8dcc5;
+  color: #806334;
+  font-size: 10.5px;
+}
+
+.panel-tabs button.active .badge {
+  background: var(--hud-button);
+  color: #fff;
+}
+
+.panel-body {
+  flex: 1 1 auto;
+  min-height: 70px;
+  overflow-y: auto;
+  padding: 12px 16px 16px;
+}
+
+.panel-body .empty {
+  margin: 4px 0;
+  color: var(--hud-muted);
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 16px;
+  font-style: italic;
+}
+
+/* saját építkezés */
 .build-list {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  padding-top: 6px;
-  border-top: 1px solid #dde5ec;
-  font-size: 13px;
+  gap: 10px;
 }
 
-.build-list .progress {
-  height: 6px;
-  border-radius: 3px;
-  background: #dde5ec;
+.build-progress {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.build-progress .progress {
+  flex: 1;
+  height: 8px;
+  border-radius: 4px;
+  background: #ece2d0;
+  box-shadow: inset 0 1px 2px rgba(97, 77, 43, 0.15);
   overflow: hidden;
 }
 
-.build-list .progress span {
+.build-progress .progress span {
   display: block;
   height: 100%;
-  background: linear-gradient(90deg, #d2b06a, #c9905a);
+  border-radius: 4px;
+  background: linear-gradient(90deg, #e2c27a, #a17b3d);
   transition: width 0.6s;
+}
+
+.build-progress small {
+  color: var(--hud-muted);
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
 }
 
 .build-list ul {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 4px;
   margin: 0;
   padding: 0;
   list-style: none;
-  font-size: 12px;
+  font-size: 12.5px;
 }
 
 .build-list li {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 9px;
+  padding: 6px 9px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.65);
 }
 
 .build-list li .mark {
-  width: 14px;
-  text-align: center;
+  flex: none;
+  width: 22px;
+  height: 22px;
+  padding: 3px;
+  box-sizing: border-box;
+  border-radius: 50%;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+
+.build-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.25;
+}
+
+.build-info small {
+  color: var(--hud-muted);
+  font-size: 10.5px;
+  font-weight: 600;
 }
 
 .build-list li .price {
+  flex: none;
   margin-left: auto;
-  color: #7a8a97;
+  color: var(--hud-muted);
+  font-weight: 800;
 }
 
 .build-list li.owned {
-  color: #2e7d4f;
+  border-color: #e6d3a8;
+  background: linear-gradient(90deg, #fbf1dc, #fffaf0);
+  color: var(--hud-heading);
+  font-weight: 800;
+}
+
+.build-list li.owned .mark {
+  background: var(--hud-button);
+  color: #fff;
+}
+
+.build-list li.owned .price {
+  color: var(--hud-gold);
+}
+
+.build-list li.available {
+  border-color: var(--hud-line);
   font-weight: 700;
 }
 
 .build-list li.available .mark {
-  color: #c9905a;
+  background: #f5ecd9;
+  color: var(--hud-gold);
 }
 
 .build-list li.locked {
-  color: #9aa7b2;
+  color: #a39885;
 }
 
-/* eseménykártya a panelen: fajta szerinti színcsík */
-.card-decision {
-  border-left: 4px solid #c9a865;
+.build-list li.locked .mark {
+  background: #f1ebe0;
+  color: #b8ad99;
 }
 
-.card-decision.nyeremeny {
-  border-left-color: #5e8a6c;
+/* csapdák */
+.traps {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 12px;
+  line-height: 1.4;
 }
 
-.card-decision.veszteseg {
-  border-left-color: #b5574f;
+.traps li {
+  padding: 7px 10px;
+  border: 1px solid var(--hud-line);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.65);
+  color: var(--hud-text);
 }
 
-.card-decision.elony {
-  border-left-color: #d2b06a;
+.traps li b {
+  color: var(--hud-red);
 }
 
-.card-decision.hatrany {
-  border-left-color: #7f6aa0;
+/* ===== döntések ===== */
+.decision {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
-.card-decision .card-kind {
-  color: #7a8a97;
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 1.5px;
-  text-transform: uppercase;
+.decision > b {
+  color: var(--hud-heading);
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 32px;
+  font-weight: 600;
+  letter-spacing: -0.4px;
+  line-height: 1.05;
 }
 
-.card-decision .card-blocked {
-  color: #b5574f;
-  font-weight: 700;
+.decision p {
+  margin: 0;
+  color: var(--hud-muted);
+  font-size: 14px;
+  line-height: 1.5;
 }
 
-/* Jósnő: a két lap képe, kattintva választható */
-.card-pick {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+.decision p strong {
+  color: var(--hud-gold);
+}
+
+.decision .choices {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
   gap: 8px;
 }
 
-.game-panel .card-option {
+.decision .choices button,
+.build-tile {
+  font: inherit;
+  cursor: pointer;
+}
+
+.decision .choices button {
+  flex: 1 1 0;
+  min-width: 110px;
+  padding: 12px 16px;
+  border: 1px solid #ad8747;
+  border-radius: 10px;
+  background: var(--hud-button);
+  box-shadow: 0 5px 14px rgba(153, 114, 51, 0.2);
+  color: #fff;
+  font-size: 14.5px;
+  font-weight: 700;
+  transition: background 160ms ease, transform 160ms ease, box-shadow 160ms ease;
+}
+
+.decision .choices button:not(:disabled):hover {
+  transform: translateY(-1px);
+  background: var(--hud-button-hover);
+  box-shadow: 0 8px 18px rgba(153, 114, 51, 0.26);
+}
+
+.decision .choices button:disabled {
+  border-color: #d7cdbb;
+  background: #d7cdbb;
+  box-shadow: none;
+  cursor: default;
+}
+
+.decision .choices button.secondary {
+  border-color: #e3d6bf;
+  background: #f5efe4;
+  box-shadow: none;
+  color: #806334;
+}
+
+.decision .choices button.secondary:not(:disabled):hover {
+  background: #eee3d1;
+}
+
+/* középre nyíló döntési ablak (építkezés, felvonó, gambling, csapda) */
+.decision-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: radial-gradient(ellipse at center, rgba(31, 35, 38, 0.18), rgba(31, 35, 38, 0.42));
+  animation: hud-fade 260ms ease both;
+}
+
+.decision-dialog {
+  position: relative;
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  padding: 4px;
-  background: #ffffff;
-  color: #2b4a63;
+  gap: 14px;
+  width: min(540px, 100%);
+  max-height: calc(100% - 32px);
+  box-sizing: border-box;
+  overflow-y: auto;
+  padding: 30px 32px 26px;
+  border: 1px solid #e8dcc5;
+  border-radius: 20px;
+  background: radial-gradient(ellipse at 50% 0%, #fffefb 0%, var(--hud-cream) 50%, var(--hud-cream-2) 100%);
+  box-shadow: 0 24px 60px rgba(31, 35, 38, 0.35), inset 0 0 0 5px rgba(255, 255, 255, 0.7);
+  color: var(--hud-text);
+  text-align: center;
+  user-select: none;
+  animation: hud-pop 360ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+/* arany vonal a tetején */
+.decision-dialog::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 120px;
+  height: 3px;
+  border-radius: 0 0 3px 3px;
+  background: var(--hud-button);
+  transform: translateX(-50%);
+}
+
+.decision-eyebrow {
+  margin: 0 0 -6px;
+  color: var(--hud-gold);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 2.6px;
+  text-transform: uppercase;
+}
+
+.decision-eyebrow span {
+  color: var(--hud-gold-soft);
+}
+
+/* építkezés: az elemek csempékként, a letiltottak alatt az ok */
+.build-options {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  text-align: left;
+}
+
+.build-tile {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: baseline;
+  gap: 2px 8px;
+  padding: 11px 13px;
+  border: 1px solid #d9c49a;
+  border-left: 4px solid var(--hud-gold-soft);
+  border-radius: 11px;
+  background: #fffefa;
+  box-shadow: 0 3px 10px rgba(97, 77, 43, 0.1);
+  color: var(--hud-text);
+  text-align: left;
+  transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+}
+
+.build-tile:not(:disabled):hover {
+  transform: translateY(-2px);
+  border-color: #c49a52;
+  box-shadow: 0 8px 18px rgba(153, 114, 51, 0.22);
+}
+
+.build-tile .build-name {
+  color: var(--hud-heading);
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 19px;
+  font-weight: 600;
+  line-height: 1.1;
+}
+
+.build-tile .price {
+  color: var(--hud-text);
+  font-size: 12.5px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.build-tile s {
+  margin-right: 3px;
+  color: var(--hud-muted);
+  font-weight: 400;
+}
+
+.build-tile small {
+  grid-column: 1 / -1;
+  color: var(--hud-red);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.build-tile:disabled {
+  border-color: var(--hud-line);
+  border-left-color: #ddd2bf;
+  background: #f6f1e8;
+  box-shadow: none;
+  cursor: default;
+}
+
+.build-tile:disabled .build-name,
+.build-tile:disabled .price {
+  color: #a39885;
+}
+
+/* ===== a húzott kártya alatt: elfogadás vagy a Jósnő választása ===== */
+.card-bar {
+  position: absolute;
+  bottom: 22px;
+  left: 50%;
+  z-index: 15;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  max-width: calc(100% - 32px);
+  padding: 10px 12px 10px 20px;
+  border: 1px solid var(--hud-glass-line);
+  border-radius: 22px;
+  background: var(--hud-glass);
+  box-shadow: 0 10px 30px rgba(20, 23, 24, 0.3);
+  backdrop-filter: blur(6px);
+  transform: translateX(-50%);
+  user-select: none;
+  animation: hud-rise 500ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+.card-bar .decision {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.card-bar .card-kind {
+  color: #f0dfbb;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 2.2px;
+  text-transform: uppercase;
+}
+
+.card-bar .card-kind b {
+  color: #fffaf0;
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.card-bar .card-blocked {
+  color: #f2b8a6;
   font-size: 12px;
-  box-shadow: inset 0 0 0 1px #c9d6e0;
+  font-weight: 700;
 }
 
-.game-panel .card-option:hover:not(:disabled) {
-  box-shadow: inset 0 0 0 2px #c9a865;
+.card-bar .choices button {
+  min-width: 130px;
+  padding: 9px 22px;
+  border-radius: 999px;
+  border-color: #c9a96a;
 }
 
-.card-option img {
-  width: 100%;
-  border-radius: 6px;
+.card-bar .card-pick {
+  flex-wrap: nowrap;
+}
+
+.card-bar .card-option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  line-height: 1.2;
+}
+
+.card-bar .card-option small {
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 1.2px;
+  opacity: 0.85;
+  text-transform: uppercase;
+}
+
+.card-bar .decision-error {
+  font-size: 11.5px;
+}
+
+/* ===== dobás: lent középen, sötét üvegen ===== */
+.roll-bar {
+  position: absolute;
+  bottom: 22px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 8px;
+  border: 1px solid var(--hud-glass-line);
+  border-radius: 999px;
+  background: var(--hud-glass);
+  box-shadow: 0 10px 30px rgba(20, 23, 24, 0.3);
+  backdrop-filter: blur(6px);
+  user-select: none;
+  animation: hud-rise 500ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+.roll-button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 210px;
+  justify-content: center;
+  padding: 11px 30px 12px;
+  border: 1px solid #c9a96a;
+  border-radius: 999px;
+  background: var(--hud-button);
+  box-shadow: 0 6px 16px rgba(153, 114, 51, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  color: #fffaf0;
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 26px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: background 160ms ease, transform 160ms ease, box-shadow 160ms ease;
+}
+
+.roll-button:not(:disabled):hover {
+  transform: translateY(-1px);
+  background: var(--hud-button-hover);
+  box-shadow: 0 9px 20px rgba(153, 114, 51, 0.42), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+}
+
+.roll-button:not(:disabled):active {
+  transform: translateY(1px);
+}
+
+.roll-button:disabled {
+  border-color: rgba(226, 196, 137, 0.35);
+  background: rgba(255, 250, 240, 0.08);
+  box-shadow: none;
+  color: #e9d6ad;
+  cursor: default;
+}
+
+.roll-die {
+  font-family: system-ui, sans-serif;
+  font-size: 24px;
+  line-height: 1;
+}
+
+.roll-wait {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  padding: 6px 20px 8px;
+  color: #f0d7a2;
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 22px;
+  font-style: italic;
+  font-weight: 500;
+}
+
+.roll-wait .turn-dot {
+  box-shadow: 0 0 0 2px rgba(31, 35, 38, 0.9), 0 0 0 3.5px var(--player, #c9bda8);
+}
+
+/* ===== játékkód és kilépés: fent középen ===== */
+.game-menu {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 5px 5px 5px 16px;
+  border: 1px solid var(--hud-glass-line);
+  border-radius: 999px;
+  background: var(--hud-glass);
+  box-shadow: 0 6px 18px rgba(20, 23, 24, 0.22);
+  backdrop-filter: blur(6px);
+  color: #f0dfbb;
+  font-size: 12px;
+  white-space: nowrap;
+  user-select: none;
+}
+
+.game-menu-code span {
+  color: var(--hud-gold-soft);
+}
+
+.game-menu-code b {
+  margin-left: 4px;
+  color: #fffaf0;
+  letter-spacing: 2px;
+}
+
+.game-menu-confirm {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #fffaf0;
+  font-weight: 700;
+}
+
+.game-menu button {
+  padding: 5px 13px;
+  border: 1px solid #c9a96a;
+  border-radius: 999px;
+  background: var(--hud-button);
+  color: #fffaf0;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.game-menu button.secondary {
+  border-color: rgba(226, 196, 137, 0.55);
+  background: transparent;
+  color: #f0dfbb;
+}
+
+.game-menu button.secondary:hover {
+  background: rgba(255, 250, 240, 0.1);
+}
+
+@keyframes hud-rise {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 16px);
+  }
+}
+
+@keyframes hud-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes hud-pop {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.97);
+  }
 }

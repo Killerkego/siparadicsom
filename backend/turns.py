@@ -38,15 +38,16 @@ def build_price(building: dict, discount: int, player: dict | None = None) -> in
 
 
 def build_problem(player: dict, building: dict, discount: int) -> str | None:
-    """Miért nem veheti meg most a játékos az elemet (None, ha megveheti)."""
+    """Miért nem veheti meg most a játékos az elemet (None, ha megveheti). Röviden, mert az építkezésnél
+    a letiltott elem mellett is ez látszik."""
     if building["id"] in player["buildings"]:
-        return f"A(z) {building['name']} már megvan."
+        return "Már megvan."
     missing = [BUILDING_BY_ID[r]["name"] for r in building["requires"] if r not in player["buildings"]]
     if missing:
-        return f"A(z) {building['name']} előfeltétele: {', '.join(missing)}."
+        return f"Előfeltétel: {', '.join(missing)}"
     price = build_price(building, discount, player)
     if player["money"] < price:
-        return f"Nincs elég pénzed: a(z) {building['name']} {price} HK."
+        return f"Nincs elég pénzed (még {price - player['money']} HK kell)"
     return None
 
 
@@ -78,19 +79,23 @@ def finish_turn(game: dict, player: dict) -> None:
         close_turn(game, player)
         return
     discount = RULES["shop_discount"] if BOARD[player["position"]]["type"] == "vasarlas" else 0
-    options = [b["id"] for b in BUILDINGS if build_problem(player, b, discount) is None]
+    missing = [b for b in BUILDINGS if b["id"] not in player["buildings"]]
+    problems = {b["id"]: build_problem(player, b, discount) for b in missing}
+    options = [b for b, problem in problems.items() if problem is None]
     if options:
-        prices = {b: build_price(BUILDING_BY_ID[b], discount, player) for b in options}
         game["pending"] = {
             "type": "build",
             "player_id": player["id"],
             "discount": discount,
             "options": options,
-            "prices": prices,
+            # a még meg nem lévő, most nem megvehető elemek is látszanak letiltva, az okukkal
+            "blocked": {b: problem for b, problem in problems.items() if problem},
+            "prices": {b["id"]: build_price(b, discount, player) for b in missing},
         }
         return
-    if discount:
-        add_log(game, f"{player['name']} vásárlási mezőn áll, de most nincs megvehető építési elem.")
+    if missing:
+        where = "vásárlási mezőn áll, de " if discount else ""
+        add_log(game, f"{player['name']} {where}most nem tud építeni: nincs megvehető elem (pénz vagy előfeltétel hiányzik).")
     close_turn(game, player)
 
 

@@ -46,6 +46,7 @@ export default function HomeScreen({ onCreate, onJoin }) {
             <span>Neved</span>
             <input value={name} maxLength={20} placeholder="pl. Anna" onChange={(e) => setName(e.target.value)} />
           </label>
+          {!hasName && <p className="name-hint">A játékhoz előbb add meg a neved.</p>}
 
           <button className="btn home-create" disabled={!hasName || busy} onClick={() => run(() => onCreate(name))}>
             Új játék létrehozása
