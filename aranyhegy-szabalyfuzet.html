@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Aranyhegy Szálló – Játékszabályok</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Great+Vibes&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg1:#e9eef5;--bg2:#cfd9e6;--paper:#fdfbf6;--ink:#3b3226;--soft:#7d7365;--gold:#b08430;--gold2:#8a6221;--line:#e3d6b8;--navy:#14213d;--wood:#a8692f;--ctl:#14213d;--ctlt:#f2d48a;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg1:#0d1626;--bg2:#050a14;--ctl:#f2d48a;--ctlt:#14213d}}
+:root[data-theme="dark"]{--bg1:#0d1626;--bg2:#050a14;--ctl:#f2d48a;--ctlt:#14213d}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:radial-gradient(ellipse at top,var(--bg1),var(--bg2));font-family:Nunito,"Segoe UI",Arial,sans-serif;color:var(--ink);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:10px;overflow:hidden}
+#book{position:relative;display:flex;width:min(96vw,800px);height:min(78vh,600px);filter:drop-shadow(0 14px 26px rgba(0,0,0,.35));perspective:2200px}
+#book.solo{justify-content:flex-end}
+.pg{display:none;position:absolute;top:0;left:0;width:50%;height:100%;background:var(--paper);overflow:hidden}
+.pg.on{display:block}
+.pg.L{box-shadow:-3px 2px 0 #ece3cb,-6px 4px 0 #e0d4b6;border-radius:10px 2px 2px 10px;background:linear-gradient(90deg,var(--paper) 90%,#eee4cc)}
+.pg.R{left:50%;box-shadow:3px 2px 0 #ece3cb,6px 4px 0 #e0d4b6;border-radius:2px 10px 10px 2px;background:linear-gradient(270deg,var(--paper) 90%,#eee4cc)}
+.pg::after{content:"";position:absolute;inset:7px;border:1px solid var(--line);border-radius:6px;pointer-events:none}
+.in{position:absolute;inset:0 0 40px 0;padding:24px 26px 10px;overflow-y:auto;font-size:13px;line-height:1.5}
+.fl{position:absolute;bottom:9px;width:26px;height:26px;z-index:2;opacity:.92}
+.pg.L .fl{left:18px}.pg.R .fl{right:18px}
+.num{position:absolute;bottom:10px;left:0;right:0;text-align:center;font-family:"Cormorant Garamond",Georgia,serif;font-size:13px;color:var(--gold);z-index:2}
+.eb{font-size:10px;letter-spacing:.28em;text-transform:uppercase;color:var(--gold);font-weight:700;text-align:center}
+h2{font-family:"Cormorant Garamond",Georgia,serif;font-weight:600;font-size:30px;line-height:1.05;color:var(--gold2);text-align:center;margin:6px 0 4px}
+h3{font-family:"Cormorant Garamond",Georgia,serif;font-size:18px;color:var(--gold2);margin:12px 0 4px}
+.orn{text-align:center;color:var(--gold);margin:4px 0 10px;display:flex;align-items:center;gap:8px;font-size:11px}
+.orn::before,.orn::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,transparent,var(--gold))}
+.orn::after{transform:scaleX(-1)}
+p{margin:5px 0}
+.cap{color:var(--soft);font-style:italic;font-family:"Cormorant Garamond",Georgia,serif;font-size:15px;text-align:center}
+.box{border:1px solid var(--line);background:#fffdf7;border-radius:10px;padding:8px 12px;margin:7px 0;display:flex;justify-content:space-between;gap:10px;align-items:center}
+.box b{color:var(--gold2)}
+.big{font-family:"Cormorant Garamond",Georgia,serif;font-size:26px;color:var(--gold2);font-weight:700;white-space:nowrap}
+.toc div{display:flex;gap:6px;font-size:14px;padding:4px 0}
+.toc i{flex:1;border-bottom:1px dotted var(--gold);transform:translateY(-4px)}
+.toc span:last-child{color:var(--gold2);font-weight:700}
+.step{display:flex;gap:12px;margin:10px 0;align-items:flex-start}
+.n{flex:none;width:34px;height:34px;border-radius:50%;background:var(--navy);color:#f2d48a;border:2px solid var(--gold);display:grid;place-items:center;font-family:"Cormorant Garamond",serif;font-weight:700;font-size:19px}
+.goal{background:var(--navy);color:#f6efe0;border-radius:12px;padding:10px 14px;margin:8px 0;display:flex;gap:12px;align-items:center}
+.goal .big{color:#f2d48a;font-size:30px}
+.chip{flex:none;width:92px;text-align:center;color:#fff;font-weight:700;font-size:10px;letter-spacing:.08em;text-transform:uppercase;padding:7px 2px;border-radius:5px;border-bottom:3px solid rgba(0,0,0,.25)}
+.tile{display:flex;gap:10px;margin:7px 0;align-items:flex-start}
+.tile div:last-child{font-size:12.5px}
+.tile small{color:var(--soft)}
+.pos{color:#1f6b3a;font-weight:700}.neg{color:#9b1c2e;font-weight:700}
+.bld{display:grid;grid-template-columns:1fr auto;gap:0 8px;border:1px solid var(--line);background:#fffdf7;border-radius:8px;padding:6px 11px;margin:5px 0}
+.bld span{font-size:11.5px;color:var(--soft)}.bld em{font-style:normal;font-weight:700;grid-row:1/3;grid-column:2;align-self:center}
+.cards p{margin:4px 0;font-size:12.2px}
+.tag{display:inline-block;font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:#fff;border-radius:10px;padding:1px 8px;margin-right:4px}
+.note{border-left:3px solid var(--gold);padding:4px 10px;background:#f8f1df;font-size:12px;border-radius:0 6px 6px 0;margin:8px 0}
+.cover{background:var(--navy)!important;color:#fff}
+.cover svg{position:absolute;inset:0;width:100%;height:100%}
+.cover .tx{position:absolute;top:24px;left:20px;right:20px;text-align:center}
+.cover .t{font-family:"Great Vibes","Brush Script MT",cursive;font-size:50px;color:#f2d48a;line-height:1.05;margin:8px 0}
+.cover .tx p{font-size:14px;color:#e9eef6}
+.cover .cl{inset:auto;left:50%;bottom:20px;width:86px;height:86px;margin-left:-43px;z-index:2;filter:drop-shadow(0 3px 6px rgba(0,0,0,.35))}
+.cover .eb{color:#f2d48a}
+.cover::after{border-color:rgba(242,212,138,.5)}
+.leaf{position:absolute;top:0;height:100%;width:50%;transform-style:preserve-3d;z-index:5}
+.leaf.r{left:50%;transform-origin:left center}
+.leaf.l{left:0;transform-origin:right center}
+.leaf .pg{position:absolute;inset:0;width:100%;height:100%;backface-visibility:hidden;-webkit-backface-visibility:hidden;box-shadow:0 0 22px rgba(0,0,0,.3)}
+.leaf .k{transform:rotateY(180deg)}
+.lg{display:flex;align-items:center;gap:12px;margin:0 0 8px}
+.lg::before,.lg::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,transparent,var(--gold))}
+.lg::after{transform:scaleX(-1)}
+.lg svg{width:78px;height:78px;flex:none;filter:drop-shadow(0 3px 5px rgba(0,0,0,.3))}
+.lg.s svg{width:58px;height:58px}
+.nav{display:flex;gap:10px;align-items:center}
+.nav button{background:var(--ctl);color:var(--ctlt);border:0;border-radius:20px;padding:9px 22px;font:700 13px Nunito,sans-serif;cursor:pointer}
+.nav button:disabled{opacity:.35;cursor:default}
+.nav span{color:var(--soft);font-size:12px;min-width:64px;text-align:center}
+@media (max-width:600px){.leaf{width:100%}.leaf.l,.leaf.r{left:0;transform-origin:left center}#book{width:min(94vw,420px);height:76vh}.pg{width:100%}.pg.L,.pg.R{left:0;border-radius:8px;box-shadow:-3px 2px 0 #ece3cb,-6px 4px 0 #e0d4b6}#book.solo{justify-content:center}.cover .t{font-size:50px}}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><linearGradient id="lgg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f7d97f"/><stop offset=".55" stop-color="#c58f2a"/><stop offset="1" stop-color="#7d5513"/></linearGradient><clipPath id="lgc"><circle cx="60" cy="60" r="45"/></clipPath></defs><symbol id="logo" viewBox="0 0 120 120"><circle cx="60" cy="60" r="58" fill="#0d1a3a"/><circle cx="60" cy="60" r="56" fill="none" stroke="url(#lgg)" stroke-width="2.5"/><circle cx="60" cy="60" r="51" fill="none" stroke="#d9b45a" stroke-width="1.6" stroke-dasharray="1 3.2" stroke-linecap="round"/><circle cx="60" cy="60" r="47" fill="none" stroke="url(#lgg)" stroke-width="1.2"/><g clip-path="url(#lgc)"><rect width="120" height="120" fill="#16295a"/><g fill="#fff"><circle cx="30" cy="34" r="1"/><circle cx="82" cy="28" r="1.1"/><circle cx="94" cy="44" r=".9"/><circle cx="48" cy="24" r=".8"/><circle cx="22" cy="52" r=".8"/></g><circle cx="38" cy="38" r="5" fill="#f4ead0"/><polygon points="52,94 86,52 112,94" fill="#b9892b"/><polygon points="14,96 60,26 106,96" fill="url(#lgg)"/><polygon points="60,26 106,96 70,96" fill="#7d5513" opacity=".45"/><polygon points="60,26 70,42 63,38 58,45 51,38 45,44" fill="#fff"/><ellipse cx="60" cy="100" rx="52" ry="12" fill="#f6edd5"/></g></symbol></svg>
+<div id="book">
+
+<!-- 0 CÍMLAP -->
+<section class="pg cover"><svg viewBox="0 0 380 600" preserveAspectRatio="xMidYMid slice"><defs><linearGradient id="sk" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#14213d"/><stop offset=".55" stop-color="#4a6a9c"/><stop offset="1" stop-color="#dfeaf5"/></linearGradient><linearGradient id="gd" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f5d27a"/><stop offset="1" stop-color="#a8741d"/></linearGradient></defs><rect width="380" height="600" fill="url(#sk)"/><g fill="#fff" opacity=".8"><circle cx="40" cy="260" r="1.5"/><circle cx="320" cy="250" r="1.2"/><circle cx="90" cy="310" r="1"/><circle cx="290" cy="320" r="1.6"/><circle cx="200" cy="270" r="1"/></g><polygon points="0,470 70,360 120,420 190,330 260,430 320,370 380,450 380,600 0,600" fill="#8fa8c7"/><polygon points="0,520 110,400 170,470 245,380 330,480 380,440 380,600 0,600" fill="#5d7aa3"/><polygon points="108,402 128,385 150,445 125,430" fill="#fff" opacity=".85"/><polygon points="245,380 262,402 244,396 226,412" fill="#fff"/><polygon points="95,600 190,360 285,600" fill="url(#gd)"/><polygon points="190,360 214,424 196,414 186,436 168,418 160,424" fill="#fff"/><polygon points="0,560 120,520 230,555 380,510 380,600 0,600" fill="#fdfbf6"/></svg>
+<div class="tx"><div class="eb">✦ Alpesi üdülő · Ötcsillagos szálló ✦</div><div class="t">Aranyhegy Szálló</div><p>Öt csillag a felhők felett.</p><div class="eb" style="margin-top:14px">Játékszabályok</div></div><svg class="cl" viewBox="0 0 120 120"><use href="#logo"/></svg></section>
+
+<!-- 1 TARTALOM -->
+<section class="pg"><div class="in"><div class="eb">✦ Üdvözlünk a hegyen ✦</div><h2>Tartalom</h2><div class="orn">✦</div>
+<p style="text-align:center">Gazdálkodj okosan, építsd fel a szállodakomplexumot, és érd el a csúcsot!</p>
+<div class="toc" style="margin-top:14px"><div><span>Alapok</span><i></i><span>2</span></div><div><span>A cél</span><i></i><span>3</span></div><div><span>Egy kör menete</span><i></i><span>4</span></div><div><span>Épületek</span><i></i><span>5</span></div><div><span>Hitel és START</span><i></i><span>6</span></div><div><span>A tábla mezői</span><i></i><span>7–8</span></div><div><span>Eseménykártyák</span><i></i><span>9–10</span></div><div><span>Példa és emlékeztető</span><i></i><span>11</span></div></div></div><div class="num">1</div></section>
+
+<!-- 2 ALAPOK -->
+<section class="pg"><div class="in"><div class="eb">✦ Előkészületek ✦</div><h2>Alapok</h2><div class="orn">✦</div>
+<div class="box"><span><b>Játékosok</b><br>böngészőben, 2–4 fő</span><span class="big">2–4</span></div>
+<div class="box"><span><b>Csatlakozás</b><br>Valaki létrehozza a játékot, és a 6 karakteres kóddal lehet csatlakozni. Bot játékosok is hozzáadhatók.</span></div>
+<div class="box"><span><b>Pénz</b><br>Hókristály Kredit (HK). Mindenki ennyivel indul:</span><span class="big">10 000 HK</span></div>
+<div class="box"><span><b>A tábla</b><br>40 mező. Mindenki a START-ról (Völgyállomás) indul.</span><span class="big">40</span></div>
+<div class="box"><span><b>Sorrend</b><br>A létrehozó kezd, utána a csatlakozás sorrendjében jönnek a többiek.</span></div></div><div class="num">2</div></section>
+
+<!-- 3 CÉL -->
+<section class="pg"><div class="in"><div class="eb">✦ Győzelem ✦</div><h2>A cél</h2><div class="orn">✦</div>
+<p style="text-align:center">Az nyer, aki a <b>saját köre végén</b> egyszerre teljesíti mind a hármat:</p>
+<div class="goal"><span class="big">1</span><span>Mind a <b>8 épületet</b> megépítette.</span></div>
+<div class="goal"><span class="big">2</span><span>Legalább <b>7000 HK</b>-ja van.</span></div>
+<div class="goal"><span class="big">3</span><span>Nincs <b>hiteltartozása</b>.</span></div>
+<div class="note">A győzelmet a köröd végén, az építkezés után ellenőrzi a játék.</div></div><div class="num">3</div></section>
+
+<!-- 4 KÖR -->
+<section class="pg"><div class="in"><div class="eb">✦ Játékmenet ✦</div><h2>Egy kör menete</h2><div class="orn">✦</div>
+<div class="step"><div class="n">1</div><div><b>Dobás</b><br>Dobj egy kockával (1–6), a bábu ennyit lép előre.</div></div>
+<div class="step"><div class="n">2</div><div><b>Mező hatása</b><br>Érvényesül annak a mezőnek a hatása, ahová érkeztél.</div></div>
+<div class="step"><div class="n">3</div><div><b>Építkezés</b><br>A kör végén legfeljebb egy épületet vehetsz, ha van rá pénzed, és megvannak az előfeltételei.</div></div>
+<div class="step"><div class="n">4</div><div><b>Ellenőrzés</b><br>Ellenőrzés, hogy nyertél-e, utána a következő játékos jön.</div></div></div><div class="num">4</div></section>
+
+<!-- 5 ÉPÜLETEK -->
+<section class="pg"><div class="in"><div class="eb">✦ Építkezésem ✦</div><h2>Épületek</h2><div class="orn">✦</div>
+<p class="cap">Összesen 42 000 HK · az árakat 50 HK-ra kerekítve számolja a játék</p>
+<div class="bld"><b>Pályarendszer</b><em>3500 HK</em><span>nincs előfeltétel</span></div>
+<div class="bld"><b>Szálloda</b><em>7500 HK</em><span>nincs előfeltétel</span></div>
+<div class="bld"><b>Felvonó</b><em>5500 HK</em><span>Előfeltétel: Pályarendszer</span></div>
+<div class="bld"><b>Étterem</b><em>4000 HK</em><span>Előfeltétel: Szálloda</span></div>
+<div class="bld"><b>Wellness és spa</b><em>5500 HK</em><span>Előfeltétel: Szálloda</span></div>
+<div class="bld"><b>Luxusbár</b><em>4000 HK</em><span>Előfeltétel: Étterem</span></div>
+<div class="bld"><b>Luxus lakosztályok</b><em>6500 HK</em><span>Előfeltétel: Szálloda, Wellness és spa</span></div>
+<div class="bld"><b>Helikopter-leszállópálya</b><em>5500 HK</em><span>Előfeltétel: Szálloda, Felvonó</span></div></div><div class="num">5</div></section>
+
+<!-- 6 HITEL -->
+<section class="pg"><div class="in"><div class="eb">✦ Pénzügyek ✦</div><h2>Hitel és START</h2><div class="orn">✦</div>
+<h3>Hitel</h3>
+<p>Ha egy kötelező fizetésre nincs elég pénzed, a bank automatikusan kölcsönad <b>1000 HK-s egységekben</b>, <b>10% kamattal</b>.</p>
+<p>A tartozást minden START-on törleszted, amennyit a pénzed fedez.</p>
+<div class="note"><b>Fontos:</b> amíg van hiteled, nem nyerhetsz.</div>
+<h3>START (Völgyállomás)</h3>
+<p>Áthaladáskor vagy rálépéskor <span class="pos">+2000 HK</span>. Ilyenkor a bank levonja a hitelt is, amennyit a pénzed fedez.</p>
+<h3>Árak</h3>
+<p>Az építkezési árakat a játék 50 HK-ra kerekíti.</p></div><div class="num">6</div></section>
+
+<!-- 7 MEZŐK I -->
+<section class="pg"><div class="in"><div class="eb">✦ A tábla ✦</div><h2>Mezők I.</h2><div class="orn">✦</div>
+<div class="tile"><div class="chip" style="background:#1f6b3a">Bevételi<br>7 db</div><div><span class="pos">+2200 HK</span></div></div>
+<div class="tile"><div class="chip" style="background:#9b1c2e">Kiadási<br>7 db</div><div><span class="neg">−1300 HK</span> (ha nincs rá pénzed, hitelből)</div></div>
+<div class="tile"><div class="chip" style="background:#5a2a6b">Kártyahúzó<br>6 db</div><div>Húzol egy eseménykártyát.</div></div>
+<div class="tile"><div class="chip" style="background:#a8672a">Vásárlási<br>4 db</div><div>Ebben a körben <b>−30%</b> az építkezésre.</div></div>
+<div class="tile"><div class="chip" style="background:#4b6b60">Semleges<br>4 db</div><div>Nincs hatása.</div></div>
+<div class="tile"><div class="chip" style="background:#17315e">Felvonó<br>4 db</div><div>500 HK-ért átmehetsz egy másik felvonó mezőre. Nem kötelező.</div></div>
+<div class="note">A visszaléptető mezőket úgy rakták ki, hogy a visszalépés mindig kiadási mezőre vigyen.</div></div><div class="num">7</div></section>
+
+<!-- 8 MEZŐK II -->
+<section class="pg"><div class="in"><div class="eb">✦ A tábla ✦</div><h2>Mezők II.</h2><div class="orn">✦</div>
+<div class="tile"><div class="chip" style="background:#1b3f78">Gambling<br>2 db</div><div>Ha vállalod a kockázatot, dobsz: <b>4–6</b> esetén <span class="pos">+2000 HK</span>, <b>1–3</b> esetén 5 mezőt vissza, és az ottani kiadási mező hatása is érvényesül.</div></div>
+<div class="tile"><div class="chip" style="background:#1d6a72">Síverseny<br>2 db</div><div>Mindenki dob, a legnagyobbat dobó <span class="pos">+1500 HK</span>-t kap. Döntetlennél az élen állók újra dobnak.</div></div>
+<div class="tile"><div class="chip" style="background:#6b2230">Csapda<br>2 db</div><div>Ha üres (vagy a saját csapdád van rajta), csapdát raksz le. Ha más csapdájába lépsz, az elsül: vagy 3 mezőt vissza (kiadási mezőre), vagy <span class="neg">1000 HK</span>-t fizetsz a lerakójának. Hogy melyik, azt a lerakó választja.</div></div>
+<div class="tile"><div class="chip" style="background:#1b3f78">Oktatás<br>1 db</div><div>Itt ragadsz, amíg páros számot nem dobsz. Addig minden köröd elején <span class="pos">+500 HK</span>.</div></div></div><div class="num">8</div></section>
+
+<!-- 9 KÁRTYÁK I -->
+<section class="pg"><div class="in"><div class="eb">✦ Kártyahúzó mező ✦</div><h2>Eseménykártyák</h2><div class="orn">✦</div>
+<p><b>40 lap:</b> 12 nyeremény, 12 veszteség, 8 előny, 8 hátrány. Ha elfogy a pakli, a dobott lapokat újrakeveri a játék. Ha egy kártya mozgat, az érkezési mező hatása nem érvényesül.</p>
+<h3><span class="tag" style="background:#1f6b3a">Nyeremény</span></h3><div class="cards"><p>Orosz oligarcha <span class="pos">+3200</span> · Fesztivál <span class="pos">+2200</span> · Az év síterepe <span class="pos">+2500</span> · Ereklye eladása <span class="pos">+1800</span> · Teltház <span class="pos">+2400</span> (+600, ha van Szállodád vagy Luxus lakosztályod) · Nagyvonalú bank <span class="pos">+1600</span> · Olimpiai edzőtábor <span class="pos">+2800</span> (+500, ha van Pályarendszered) · Bajnokság <span class="pos">+2000</span> · Biztosítás kifizetése <span class="pos">+1500</span> · Gourmet hétvége <span class="pos">+3000</span>, ha van Éttermed, különben +900 · A hegy királya: mindenki +400-at kap épületenként · Pezsgős gála <span class="pos">+2300</span></p></div>
+<h3><span class="tag" style="background:#1b3f78">Előny</span></h3><div class="cards"><p><b>Szezonnyitó buli:</b> a következő 2 bevételi mezőn +50%.</p><p><b>Üres felvonó:</b> még egyszer dobhatsz.</p><p><b>Szponzor:</b> 3 körön belül a következő épületed −40%.</p><p><b>Lojális ügyfél:</b> 5 körig egy rossz kártyád nem számít.</p><p><b>Könyvelő:</b> +700, és a következő kiadási mezőn csak a felét fizeted.</p><p><b>Helikopter transzfer:</b> a START-ra ugrasz, +2000.</p><p><b>Turisztikai vonzás:</b> 4 mezőt előre, és ha átmész a START-on, +4000.</p><p><b>Jósnő:</b> 2 lapot húzol, az egyiket végrehajtod, a másik a pakli aljára kerül.</p></div></div><div class="num">9</div></section>
+
+<!-- 10 KÁRTYÁK II -->
+<section class="pg"><div class="in"><div class="eb">✦ Kártyahúzó mező ✦</div><h2>Szerencse és balszerencse</h2><div class="orn">✦</div>
+<h3><span class="tag" style="background:#9b1c2e">Veszteség</span></h3><div class="cards"><p>Sérült vendég <span class="neg">−1500</span> · Sztrájk <span class="neg">−1800</span>, és egyszer nem építhetsz · Felvonó meghibásodása <span class="neg">−2200</span> (ha van Felvonód, csak −1600), és egyszer nem építhetsz · Lavina <span class="neg">−2000</span> és 2 mezőt vissza · Jegesedés <span class="neg">−1200</span>, és a következő dobásodból 1-et le kell vonni · Negatív visszajelzés <span class="neg">−1400</span>, és a következő épületed +20%-kal drágább · Fellépés lemondása <span class="neg">−1000</span>, ha van Luxusbárod, különben −1800 · Kiürítés <span class="neg">−1300</span>, és kimaradsz egy körből · Foglalás lemondása <span class="neg">−1600</span> · Kötelező befizetés: mindenki <span class="neg">−700</span> · Gyenge szezon <span class="neg">−600</span> épületenként, és még −600 · Túlfoglalás <span class="neg">−1800</span>, és minden játékosnak, akinek több épülete van nálad, további 400-at fizetsz</p></div>
+<h3><span class="tag" style="background:#5a2a6b">Hátrány</span></h3><div class="cards"><p><b>Elakadás:</b> kimaradsz egy körből.</p><p><b>Lavinaösvény:</b> 3 mezőt vissza.</p><p><b>IT-rendszer lefagyása:</b> egyszer nem építhetsz.</p><p><b>Gyenge árfolyam:</b> a következő 2 START-on csak +1000.</p><p><b>Felvonósztrájk:</b> a következő dobásnál legfeljebb 3 mezőt léphetsz.</p><p><b>Átpártolás:</b> helyet cserélsz a közvetlenül mögötted állóval; ha nincs ott senki, az 1. mezőre lépsz.</p><p><b>Rulett:</b> dobsz; 1–2: 3 mezőt vissza, 3–4: kimaradsz egy körből, 5–6: −1500.</p><p><b>Kártyablokk:</b> 5 körig egy jó kártyád nem számít.</p></div></div><div class="num">10</div></section>
+
+<!-- 11 PÉLDA -->
+<section class="pg"><div class="in"><div class="eb">✦ Gyakorlatban ✦</div><h2>Példa egy körre</h2><div class="orn">✦</div>
+<div class="step"><div class="n">1</div><div>Anna 10 000 HK-val áll, és <b>4-est dob</b>.</div></div>
+<div class="step"><div class="n">2</div><div>Bevételi mezőre lép: <span class="pos">+2200 HK</span>, így 12 200 HK-ja lesz.</div></div>
+<div class="step"><div class="n">3</div><div>A kör végén megveszi a <b>Szállodát</b> 7500 HK-ért. Maradt 4700 HK.</div></div>
+<div class="step"><div class="n">4</div><div>Még nem nyert (kevés épület), jön a következő játékos.</div></div>
+<h3>Gyors emlékeztető</h3>
+<div class="note">Körönként legfeljebb 1 épület · Hitellel nem lehet nyerni · Kártya általi mozgásnál az érkezési mező hatása nem érvényesül.</div></div><div class="num">11</div></section>
+
+<!-- 12 ZÁRÓ -->
+<section class="pg"><div class="in" style="display:flex;flex-direction:column;justify-content:center;text-align:center"><div class="eb">✦ Találkozzunk a hegytetőn ✦</div><h2 style="font-family:'Great Vibes',cursive;font-size:46px;font-weight:400">Jó játékot!</h2><div class="orn">✦</div><p>Építs, gazdálkodj okosan, és légy te az első, akinek mind a 8 épülete áll, legalább 7000 HK van a zsebében, és egy fillér hitele sincs.</p><p class="cap">Aranyhegy Szálló · Öt csillag a felhők felett</p></div><div class="num">12</div></section>
+</div>
+
+<div class="nav"><button id="prev">‹ Előző</button><span id="ctr"></span><button id="next">Következő ›</button></div>
+
+<script>
+(function(){
+var b=document.getElementById('book'),pg=[].slice.call(b.children),mq=window.matchMedia('(max-width:600px)'),v=0,prev=document.getElementById('prev'),next=document.getElementById('next'),ctr=document.getElementById('ctr');
+function views(){var a=[[0]];if(mq.matches){for(var i=1;i<pg.length;i++)a.push([i]);}else{for(var j=1;j<pg.length;j+=2)a.push([j,j+1]);}return a;}
+var vs=views();
+function show(list){pg.forEach(function(p){p.classList.remove('on','L','R');});list.forEach(function(x){var p=pg[x[0]];if(p)p.classList.add('on',x[1]);});}
+function render(){
+vs=views();if(v>=vs.length)v=vs.length-1;
+var cur=vs[v];show(cur.map(function(i,k){return [i,(cur.length===1||mq.matches)?'R':(k===0?'L':'R')];}));
+b.classList.toggle('solo',cur.length===1);
+prev.disabled=v===0;next.disabled=v===vs.length-1;ctr.textContent=(v+1)+" / "+vs.length;}
+function cl(i,c){var e=pg[i].cloneNode(true);e.classList.remove('L','R');e.classList.add('on',c);return e;}
+var busy=false;pg.slice(1).forEach(function(p){p.insertAdjacentHTML('beforeend','<svg class="fl" viewBox="0 0 120 120"><use href="#logo"/></svg>');});
+function go(d){
+var n=Math.max(0,Math.min(vs.length-1,v+d));if(n===v||busy)return;
+var cur=vs[v],nx=vs[n],fwd=d>0,front,back,side,a0,a1,ul=[];
+if(mq.matches){
+ul=[[fwd?nx[0]:cur[0],'R']];front=cl(fwd?cur[0]:nx[0],'R');back=document.createElement('section');back.className='pg on R';side='l';a0=fwd?0:-180;a1=fwd?-180:0;
+}else if(fwd){
+if(cur.length>1)ul.push([cur[0],'L']);ul.push([nx[nx.length-1],'R']);
+front=cl(cur[cur.length-1],'R');back=cl(nx[0],'L');side='r';a0=0;a1=-180;
+}else{
+if(nx.length>1)ul.push([nx[0],'L']);ul.push([cur[cur.length-1],'R']);
+front=cl(cur[0],'L');back=cl(nx[nx.length-1],'R');side='l';a0=0;a1=180;
+}
+show(ul);b.classList.remove('solo');
+var lf=document.createElement('div');lf.className='leaf '+side;
+front.classList.add('f');back.classList.add('k');lf.appendChild(front);lf.appendChild(back);b.appendChild(lf);
+lf.style.transform='rotateY('+a0+'deg)';void lf.offsetWidth;
+lf.style.transition='transform .85s cubic-bezier(.45,.05,.25,1)';lf.style.transform='rotateY('+a1+'deg)';
+busy=true;v=n;ctr.textContent=(v+1)+" / "+vs.length;
+setTimeout(function(){lf.remove();busy=false;render();},880);
+}
+prev.onclick=function(){go(-1)};next.onclick=function(){go(1)};
+document.addEventListener('keydown',function(e){if(e.key==='ArrowRight')go(1);if(e.key==='ArrowLeft')go(-1);});
+var sx=null;b.addEventListener('touchstart',function(e){sx=e.touches[0].clientX},{passive:true});
+b.addEventListener('touchend',function(e){if(sx===null)return;var dx=e.changedTouches[0].clientX-sx;if(Math.abs(dx)>60)go(dx<0?1:-1);sx=null;});
+mq.addEventListener?mq.addEventListener('change',function(){v=0;render(0)}):0;
+render(0);})();
+</script>
+</body>
+</html>
