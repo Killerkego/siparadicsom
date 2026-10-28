@@ -10,6 +10,7 @@ import CardDeck from './CardDeck';
 import Dice from './Dice';
 import { fields } from './format';
 import Pawn, { MODEL_URL as FIGURES_URL } from './Pawn';
+import Trap from './Trap';
 
 // a mezők feliratai canvasra rajzolódnak, ezért előbb be kell tölteni a betűtípust
 function useFontsReady() {
@@ -71,7 +72,7 @@ function Lights() {
   );
 }
 
-// A 3D jelenet: táj, tábla, középen a saját építkezés a kockával és a kártyapaklival, és a bábuk.
+// A 3D jelenet: táj, tábla, középen a saját építkezés a kockával és a kártyapaklival, a bábuk és a saját csapdák.
 // side: melyik oldal felé néz a kamera (0..3); a középső rész is erre fordul.
 export default function GameScene({
   game,
@@ -90,6 +91,8 @@ export default function GameScene({
   const fontsReady = useFontsReady();
   const { action, phase, settled, diceRoll, cardDraw } = timeline;
   const settledMe = settled.players.find((p) => p.id === playerId);
+  // a saját csapdák (más csapdáját nem látja senki); a mozgás végén jelennek meg vagy tűnnek el
+  const myTraps = Object.entries(settled.traps ?? {}).filter(([, trap]) => trap.owner === playerId);
 
   return (
     <Canvas shadows="percentage" dpr={[1, 2]} camera={{ fov: 55, near: 0.5, far: 400 }}>
@@ -131,6 +134,8 @@ export default function GameScene({
             lifted={phase === 'idle' && hovered?.id === p.position}
           />
         ))}
+        {settledMe &&
+          myTraps.map(([field]) => <Trap key={field} field={Number(field)} color={settledMe.color} />)}
       </Suspense>
       <Suspense fallback={null}>
         <SceneReady onReady={onReady} />

@@ -88,6 +88,14 @@ def trap(game: dict, player: dict, moves: list[dict]) -> None:
         game["pending"] = {"type": "trap", "player_id": player["id"]}
         return
     del game["traps"][key]
+    # a lerakó böngészője ebből tudja, hogy a mozgás végén értesítést mutasson
+    game["trap_event"] = {
+        "seq": (game["trap_event"] or {}).get("seq", 0) + 1,
+        "field": int(key),
+        "owner_id": owner["id"],
+        "victim_id": player["id"],
+        "kind": placed["kind"],
+    }
     if placed["kind"] == "back":
         moves.append(walk(game, player, -RULES["trap_back"]))
         add_log(game, f"{player['name']} {owner['name']} csapdájába lépett: {RULES['trap_back']} mezőt vissza.")

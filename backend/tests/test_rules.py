@@ -337,6 +337,12 @@ class FieldTests(unittest.TestCase):
         fields.land(game, victim, [])
         self.assertEqual(victim["money"], RULES["start_money"] - RULES["trap_money"])
         self.assertEqual(owner["money"], RULES["start_money"] + RULES["trap_money"])
+        event = game["trap_event"]
+        self.assertEqual(
+            (event["field"], event["owner_id"], event["victim_id"], event["kind"]),
+            (trap, owner["id"], victim["id"], "money"),
+            "a lerakó értesítést kap",
+        )
 
     def test_own_trap_does_not_fire(self):
         game, _ = new_game(2)
