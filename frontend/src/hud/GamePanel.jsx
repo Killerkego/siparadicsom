@@ -1,14 +1,12 @@
 import { useState } from 'react';
 import BuildList from './BuildList';
 import { DECISION_NAMES } from './decisions/Decision';
-import TrapList from './TrapList';
 
-const TAB_KEY = 'siparadicsom.panelTab';
 const COLLAPSED_KEY = 'siparadicsom.panelCollapsed';
 // a kocka pöttyei egy 3×3-as rácsban (balról jobbra, fentről le)
 const PIPS = { 1: [4], 2: [0, 8], 3: [0, 4, 8], 4: [0, 2, 6, 8], 5: [0, 2, 4, 6, 8], 6: [0, 2, 3, 5, 6, 8] };
 
-// a panel fülének és összecsukásának megjegyzése csak kényelmi funkció, hiba esetén az alapérték marad
+// a panel összecsukásának megjegyzése csak kényelmi funkció, hiba esetén az alapérték marad
 function load(key, fallback) {
   try {
     return localStorage.getItem(key) ?? fallback;
@@ -36,11 +34,10 @@ function DieTile({ value }) {
   );
 }
 
-// A jobb oldali panel: fejléc (ki következik, utolsó dobás), a legutóbbi esemény, fülek az építkezésnek
-// és a csapdáknak. A fejlécre kattintva összecsukható. A saját döntés a képernyő közepén, a dobás lent,
-// a kilépés fent van. A pénz, a napló és az épületek a mozgás végéig az előző (settled) állapot szerint látszanak.
+// A jobb oldali panel: fejléc (ki következik, utolsó dobás), a legutóbbi esemény és a saját építkezés.
+// A fejlécre kattintva összecsukható. A saját döntés a képernyő közepén, a dobás lent, a kilépés fent van.
+// A pénz, a napló és az épületek a mozgás végéig az előző (settled) állapot szerint látszanak.
 export default function GamePanel({ game, settled, playerId, timeline, error }) {
-  const [tab, setTab] = useState(() => (load(TAB_KEY, 'build') === 'traps' ? 'traps' : 'build'));
   const [collapsed, setCollapsed] = useState(() => load(COLLAPSED_KEY, '0') === '1');
   const { action, phase } = timeline;
   const myTurn = game.turn_player_id === playerId;
@@ -50,12 +47,7 @@ export default function GamePanel({ game, settled, playerId, timeline, error }) 
   const pending = phase === 'idle' ? game.pending : null;
   const roller = action && game.players.find((p) => p.id === action.player_id);
   const dice = action?.dice && phase !== 'rolling' ? action.dice : null;
-  const trapCount = Object.keys(settled.traps).length;
 
-  const pickTab = (key) => {
-    setTab(key);
-    save(TAB_KEY, key);
-  };
   const toggle = () => {
     setCollapsed((c) => {
       save(COLLAPSED_KEY, c ? '0' : '1');
@@ -66,11 +58,6 @@ export default function GamePanel({ game, settled, playerId, timeline, error }) 
   let status = null;
   if (pending) status = pending.player_id === playerId ? 'Döntés vár rád' : `${DECISION_NAMES[pending.type]} – dönt…`;
   else if (myTurn && phase === 'idle') status = 'Dobj a kockával';
-
-  const tabs = [
-    { key: 'build', label: 'Építkezés', badge: settledMe && `${settledMe.buildings.length}/${game.buildings.length}` },
-    { key: 'traps', label: 'Csapdák', badge: trapCount || null },
-  ];
 
   return (
     <aside className={collapsed ? 'game-panel collapsed' : 'game-panel'}>
@@ -112,21 +99,13 @@ export default function GamePanel({ game, settled, playerId, timeline, error }) 
         )}
       </section>
 
-      {!collapsed && (
+      {!collapsed && settledMe && (
         <>
-          <nav className="panel-tabs">
-            {tabs.map((t) => (
-              <button key={t.key} className={tab === t.key ? 'active' : ''} onClick={() => pickTab(t.key)}>
-                {t.label}
-                {t.badge && <span className="badge">{t.badge}</span>}
-              </button>
-            ))}
-          </nav>
+          <h3 className="panel-section">
+            <span aria-hidden="true">✦</span> Építkezésem <span aria-hidden="true">✦</span>
+          </h3>
           <div className="panel-body">
-            {tab === 'build' && settledMe && <BuildList buildings={game.buildings} owned={settledMe.buildings} />}
-            {tab === 'traps' && (
-              <TrapList traps={settled.traps} players={game.players} rules={game.rules} playerId={playerId} />
-            )}
+            <BuildList buildings={game.buildings} owned={settledMe.buildings} />
           </div>
         </>
       )}

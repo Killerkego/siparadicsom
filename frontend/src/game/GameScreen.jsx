@@ -98,7 +98,10 @@ export default function GameScreen({ game, playerId, onRoll, onChoose, onLeave, 
           onBuildAll={() => send(onDevBuildAll)}
         />
       )}
-      {game.status === 'finished' && phase === 'idle' && <Victory game={game} playerId={playerId} onLeave={onLeave} />}
+      {/* a töltőképernyő után nyílik, hogy a konfetti szétrobbanása látsszon */}
+      {game.status === 'finished' && phase === 'idle' && sceneReady && (
+        <Victory game={game} playerId={playerId} onLeave={onLeave} />
+      )}
       <LoadingScreen ready={sceneReady} />
     </>
   );
