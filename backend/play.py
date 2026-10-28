@@ -95,23 +95,27 @@ def choose_building(game: dict, player: dict, pending: dict, choice: str) -> Non
 
 
 def gamble(game: dict, player: dict, pending: dict, choice: str) -> None:
+    """Bukásnál visszalép, és az új mező hatása is érvényesül: a tábla úgy van kirakva, hogy az
+    kiadási mező legyen, így a bukás mindig fáj."""
     name = player["name"]
+    if choice not in ("yes", "no"):
+        raise HTTPException(422, "Igen vagy nem?")
+    game["pending"] = None
     if choice == "no":
         add_log(game, f"{name} nem kockáztatott a gamblingon.")
-    elif choice == "yes":
+    else:
         value = dice()
         moves = []
         if value <= 3:
             moves.append(walk(game, player, -RULES["gamble_back"]))
             add_log(game, f"{name} kockáztatott, {dobott(value)}: bukta, {RULES['gamble_back']} mezőt vissza.")
+            land(game, player, moves)
         else:
             player["money"] += RULES["gamble_prize"]
             add_log(game, f"{name} kockáztatott, {dobott(value)}: nyert, +{RULES['gamble_prize']} HK.")
         record_action(game, player, value, moves)
-    else:
-        raise HTTPException(422, "Igen vagy nem?")
-    game["pending"] = None
-    finish_turn(game, player)
+    if not game["pending"]:
+        finish_turn(game, player)
 
 
 def ride_lift(game: dict, player: dict, pending: dict, choice: str) -> None:

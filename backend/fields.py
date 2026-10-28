@@ -79,7 +79,8 @@ def lift(game: dict, player: dict, moves: list[dict]) -> None:
 
 
 def trap(game: dict, player: dict, moves: list[dict]) -> None:
-    """Más csapdájába lépve elsül (vissza vagy fizet); üres csapdamezőn a játékos rakhat le egyet."""
+    """Más csapdájába lépve elsül (vissza vagy fizet); üres csapdamezőn a játékos rakhat le egyet.
+    Visszalépésnél az új mező hatása is érvényesül: a tábla úgy van kirakva, hogy az kiadási mező legyen."""
     key = str(player["position"])
     placed = game["traps"].get(key)
     owner = placed and find_player(game, placed["owner"])
@@ -90,6 +91,7 @@ def trap(game: dict, player: dict, moves: list[dict]) -> None:
     if placed["kind"] == "back":
         moves.append(walk(game, player, -RULES["trap_back"]))
         add_log(game, f"{player['name']} {owner['name']} csapdájába lépett: {RULES['trap_back']} mezőt vissza.")
+        land(game, player, moves)
     else:
         pay(game, player, RULES["trap_money"])
         owner["money"] += RULES["trap_money"]
