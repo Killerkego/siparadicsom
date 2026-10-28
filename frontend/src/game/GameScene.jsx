@@ -73,7 +73,19 @@ function Lights() {
 
 // A 3D jelenet: táj, tábla, középen a saját építkezés a kockával és a kártyapaklival, és a bábuk.
 // side: melyik oldal felé néz a kamera (0..3); a középső rész is erre fordul.
-export default function GameScene({ game, playerId, timeline, side, canRoll, onRoll, canAckCard, onAckCard, onReady }) {
+export default function GameScene({
+  game,
+  playerId,
+  timeline,
+  side,
+  canRoll,
+  onRoll,
+  canAckCard,
+  onAckCard,
+  canPickCard,
+  onPickCard,
+  onReady,
+}) {
   const [hovered, setHovered] = useState(null);
   const fontsReady = useFontsReady();
   const { action, phase, settled, diceRoll, cardDraw } = timeline;
@@ -93,7 +105,13 @@ export default function GameScene({ game, playerId, timeline, side, canRoll, onR
 
       <group rotation-y={(-side * Math.PI) / 2}>
         <Dice roll={diceRoll} disabled={!canRoll} onClick={onRoll} />
-        <CardDeck draw={cardDraw} held={game.pending?.type === 'card'} onAck={canAckCard ? onAckCard : null} />
+        <CardDeck
+          draw={cardDraw}
+          held={game.pending?.type === 'card'}
+          onAck={canAckCard ? onAckCard : null}
+          pick={phase === 'idle' && game.pending?.type === 'card_pick' ? game.pending.options : null}
+          onPick={canPickCard ? onPickCard : null}
+        />
       </group>
       {settledMe && (
         <Suspense fallback={null}>

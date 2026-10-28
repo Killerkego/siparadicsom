@@ -89,7 +89,7 @@ def choose_building(game: dict, player: dict, pending: dict, choice: str) -> Non
             raise HTTPException(422, "Nincs ilyen építési elem.")
         problem = build_problem(player, building, pending["discount"])
         if problem:
-            raise HTTPException(409, problem)
+            raise HTTPException(409, f"{building['name']}: {problem}")
         build(game, player, building, pending["discount"])
     close_turn(game, player)
 
