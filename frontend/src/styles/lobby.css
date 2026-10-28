@@ -1,0 +1,882 @@
+/* kezdőlap és lobbi: egyszerű kártya a havas háttéren */
+.page {
+  box-sizing: border-box;
+  height: 100%;
+  padding: 8vh 16px 24px;
+  background: linear-gradient(#cfe2f0, #f4f8fb);
+  overflow-y: auto;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 380px;
+  margin: 0 auto;
+  padding: 28px;
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 8px 28px rgba(31, 42, 51, 0.15);
+}
+
+.card h1 {
+  margin: 0 0 4px;
+  text-align: center;
+  font-size: 28px;
+  font-weight: 800;
+  color: #2b4a63;
+}
+
+.card h2 {
+  margin: 8px 0 0;
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.card input {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #c9d6e0;
+  border-radius: 10px;
+  font: inherit;
+  font-size: 16px;
+}
+
+.card input:focus {
+  outline: 2px solid #2b4a63;
+  outline-offset: -1px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-weight: 700;
+}
+
+.btn {
+  padding: 11px 14px;
+  border: none;
+  border-radius: 10px;
+  background: #2b4a63;
+  color: #ffffff;
+  font: inherit;
+  font-size: 16px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.btn.secondary {
+  background: #e8eef3;
+  color: #2b4a63;
+}
+
+.btn:disabled {
+  background: #c3ced7;
+  color: #ffffff;
+  cursor: default;
+}
+
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #7a8a97;
+  font-size: 13px;
+}
+
+.divider::before,
+.divider::after {
+  content: '';
+  flex: 1;
+  border-top: 1px solid #dde5ec;
+}
+
+.join {
+  display: flex;
+  gap: 8px;
+}
+
+.join .code-input {
+  flex: 1;
+  min-width: 0;
+  text-align: center;
+  font-weight: 800;
+  letter-spacing: 4px;
+}
+
+.code-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 14px;
+  border-radius: 12px;
+  background: #eef4f8;
+}
+
+.code-box span {
+  color: #7a8a97;
+  font-size: 13px;
+}
+
+.code-box strong {
+  font-size: 32px;
+  font-weight: 800;
+  letter-spacing: 6px;
+  color: #2b4a63;
+}
+
+.players {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.players li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0;
+  border-bottom: 1px solid #eef2f5;
+  font-weight: 700;
+}
+
+.badge {
+  padding: 1px 8px;
+  border-radius: 10px;
+  background: #e8eef3;
+  color: #52626f;
+  font-size: 12px;
+}
+
+.badge.me {
+  background: #2b4a63;
+  color: #ffffff;
+}
+
+.hint,
+.muted {
+  margin: 0;
+  color: #7a8a97;
+  font-size: 14px;
+}
+
+.muted {
+  font-weight: 600;
+}
+
+.card .error {
+  margin: 0;
+  color: #c62828;
+}
+
+.home-page {
+  display: grid;
+  place-items: center;
+  padding: 32px;
+  background:
+    radial-gradient(ellipse at 50% 0%, #fffdf8 0%, transparent 58%),
+    linear-gradient(145deg, #f8f5ee, #e9dfcf);
+}
+
+.home-shell {
+  display: flex;
+  width: min(100%, 1120px);
+  min-height: 620px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.92);
+  border-radius: 24px;
+  background: #fffdf9;
+  box-shadow:
+    0 30px 80px rgba(97, 77, 43, 0.16),
+    0 4px 16px rgba(97, 77, 43, 0.08);
+  animation: home-rise 900ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+.home-visual {
+  position: relative;
+  display: flex;
+  flex: 1.12;
+  flex-direction: column;
+  justify-content: space-between;
+  min-width: 0;
+  overflow: hidden;
+  padding: 52px 48px 38px;
+  color: #fffaf0;
+  background: #4b5357;
+}
+
+.home-landscape {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 54%;
+  pointer-events: none;
+  transform-origin: 60% 40%;
+  animation: home-drift 40s ease-in-out infinite alternate;
+}
+
+.home-snow {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.home-visual::after {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background:
+    linear-gradient(90deg, rgba(20, 24, 27, 0.2), transparent 82%),
+    linear-gradient(180deg, rgba(20, 24, 27, 0.22), transparent 38%, rgba(20, 24, 27, 0.26));
+  content: '';
+  pointer-events: none;
+}
+
+.home-brand,
+.home-caption {
+  position: relative;
+  z-index: 2;
+}
+
+.home-brand {
+  width: fit-content;
+  max-width: 100%;
+  padding: 18px 24px 20px;
+  border: 1px solid rgba(226, 196, 137, 0.72);
+  border-radius: 12px;
+  background: rgba(31, 35, 38, 0.53);
+  box-shadow: 0 14px 36px rgba(20, 23, 24, 0.16);
+  backdrop-filter: blur(7px);
+  animation: home-slide-in 1s 250ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+.home-eyebrow,
+.home-form-eyebrow {
+  margin: 0;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 2.6px;
+}
+
+.home-eyebrow {
+  color: #f0dfbb;
+}
+
+.home-eyebrow span,
+.home-form-eyebrow span {
+  color: #c19b58;
+}
+
+.home-brand h1 {
+  max-width: 560px;
+  margin: 12px 0 0;
+  color: #e7c783;
+  font-family: 'Parisienne', 'Cormorant Garamond', cursive;
+  font-size: clamp(60px, 6.7vw, 84px);
+  font-weight: 400;
+  letter-spacing: 0;
+  line-height: 1.1;
+  /* arany csillanás fut végig a feliraton; a padding, hogy a kézírás kacskaringói is kapjanak színt */
+  padding: 0 0.3em 0.45em 0.2em;
+  margin-right: -0.3em;
+  margin-bottom: -0.45em;
+  margin-left: -0.2em;
+  background: linear-gradient(110deg, #e7c783 42%, #fff4d6 50%, #e7c783 58%) 100% 0 / 260% 100% no-repeat;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 3px 8px rgba(0, 0, 0, 0.3));
+  animation: home-shimmer 7s 1.4s ease-in-out infinite;
+}
+
+.home-tagline {
+  margin: 2px 0 0;
+  color: rgba(255, 250, 240, 0.92);
+  font-size: 15px;
+  letter-spacing: 0.2px;
+}
+
+.home-caption {
+  width: fit-content;
+  margin: 0;
+  padding: 7px 16px 9px;
+  border: 1px solid rgba(226, 196, 137, 0.62);
+  border-radius: 999px;
+  /* nincs backdrop-filter: lebegés közben minden képkockán újra kellene mosni a mozgó kép és a hó
+     mögötte lévő részét, és ettől akadt. Helyette kicsit sötétebb háttér. */
+  background: rgba(31, 35, 38, 0.66);
+  box-shadow: 0 4px 16px rgba(20, 23, 24, 0.16);
+  color: #f0d7a2;
+  font-family: 'Parisienne', 'Cormorant Garamond', cursive;
+  font-size: 26px;
+  font-weight: 400;
+  will-change: transform;
+  animation:
+    home-fade-up 900ms 800ms cubic-bezier(0.2, 0.7, 0.2, 1) both,
+    home-float 6s 1.7s ease-in-out infinite;
+}
+
+.home-card {
+  box-sizing: border-box;
+  justify-content: center;
+  width: 43%;
+  max-width: none;
+  margin: 0;
+  padding: 48px clamp(30px, 4.2vw, 58px);
+  border-radius: 0;
+  background: #fffdf9;
+  box-shadow: none;
+}
+
+/* az űrlap elemei egymás után úsznak be */
+.home-card > * {
+  animation: home-fade-up 700ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+.home-card > :nth-child(1) { animation-delay: 350ms; }
+.home-card > :nth-child(2) { animation-delay: 450ms; }
+.home-card > :nth-child(3) { animation-delay: 550ms; }
+.home-card > :nth-child(4) { animation-delay: 650ms; }
+.home-card > :nth-child(5) { animation-delay: 750ms; }
+.home-card > :nth-child(6) { animation-delay: 850ms; }
+
+@keyframes home-rise {
+  from {
+    opacity: 0;
+    transform: translateY(24px) scale(0.985);
+  }
+}
+
+@keyframes home-drift {
+  from {
+    transform: scale(1.04);
+  }
+  to {
+    transform: scale(1.14) translate(-1.5%, 1%);
+  }
+}
+
+@keyframes home-slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(-28px);
+    filter: blur(4px);
+  }
+}
+
+@keyframes home-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+}
+
+/* translate3d: a felirat saját rétegen mozog, így nem ugrál pixelről pixelre */
+@keyframes home-float {
+  from,
+  to {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(0, -5px, 0);
+  }
+}
+
+@keyframes home-shimmer {
+  0% {
+    background-position: 100% 0;
+  }
+  35%,
+  100% {
+    background-position: 0 0;
+  }
+}
+
+.home-form-heading {
+  margin-bottom: 16px;
+}
+
+.home-form-eyebrow {
+  color: #a17b3d;
+}
+
+.home-form-heading h2 {
+  margin: 10px 0 4px;
+  color: #987039;
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 38px;
+  font-weight: 600;
+  letter-spacing: -0.5px;
+  line-height: 1.05;
+}
+
+.home-form-copy {
+  margin: 0;
+  color: #8d8578;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.home-card .field {
+  gap: 8px;
+  color: #685b47;
+  font-size: 14px;
+}
+
+.home-card input {
+  padding: 14px 15px;
+  border-color: #e7dece;
+  border-radius: 9px;
+  background: #fdfbf7;
+  color: #514633;
+}
+
+.home-card input:focus {
+  outline: 2px solid #c6a363;
+  outline-offset: 1px;
+}
+
+.home-card .btn {
+  padding: 14px;
+  border: 1px solid #ad8747;
+  border-radius: 9px;
+  background: linear-gradient(135deg, #bd9a5d, #9b7537);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.15px;
+  box-shadow: 0 5px 14px rgba(153, 114, 51, 0.16);
+  transition: background 160ms ease, transform 160ms ease, box-shadow 160ms ease;
+}
+
+.home-card .btn:not(:disabled):hover {
+  transform: translateY(-1px);
+  background: linear-gradient(135deg, #aa8546, #89652f);
+  box-shadow: 0 8px 18px rgba(153, 114, 51, 0.24);
+}
+
+.home-card .btn:disabled {
+  border-color: #d7cdbb;
+  background: #d7cdbb;
+  box-shadow: none;
+}
+
+.home-card .btn.secondary {
+  flex: 0 0 auto;
+  border-color: #e9dfce;
+  background: #f5efe4;
+  color: #806334;
+  box-shadow: none;
+}
+
+.home-card .btn.secondary:not(:disabled):hover {
+  background: #eee3d1;
+}
+
+.home-card .divider {
+  margin: 6px 0;
+  color: #a29a8c;
+  font-size: 12px;
+}
+
+.home-card .divider::before,
+.home-card .divider::after {
+  border-color: #eee6d9;
+}
+
+.home-join {
+  gap: 9px;
+}
+
+.home-join .code-input {
+  text-align: left;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 2.4px;
+}
+
+.home-note {
+  margin: 8px 0 0;
+  color: #9c9486;
+  font-size: 12px;
+  line-height: 1.5;
+  text-align: center;
+}
+
+.lobby-page {
+  background:
+    radial-gradient(ellipse at 50% 0%, #fffdf8 0%, transparent 58%),
+    linear-gradient(145deg, #f8f5ee, #e9dfcf);
+}
+
+.lobby-card {
+  border: 1px solid rgba(255, 255, 255, 0.88);
+  background: #fffdf9;
+  box-shadow: 0 18px 48px rgba(97, 77, 43, 0.15);
+}
+
+.lobby-heading {
+  text-align: center;
+}
+
+.lobby-eyebrow {
+  margin: 0;
+  color: #a17b3d;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 2.6px;
+}
+
+.lobby-eyebrow span {
+  color: #c19b58;
+}
+
+.lobby-card h1 {
+  margin: 8px 0 0;
+  color: #987039;
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 32px;
+  font-weight: 600;
+  letter-spacing: -0.3px;
+  line-height: 1.1;
+}
+
+.lobby-card h2 {
+  color: #987039;
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 22px;
+  font-weight: 600;
+}
+
+.lobby-card input:focus {
+  outline-color: #c6a363;
+}
+
+.lobby-card .code-box {
+  border: 1px solid #e8dcc5;
+  background: linear-gradient(145deg, #faf5ea, #f3ead9);
+}
+
+.lobby-card .code-box span {
+  color: #a17b3d;
+}
+
+/* a Cormorant számjegyei eltérő magasságúak (2 kicsi, 4 lelóg), ezért a kód Nunitóval íródik */
+.lobby-card .code-box strong {
+  color: #987039;
+  font-size: 30px;
+  letter-spacing: 8px;
+  white-space: nowrap;
+  font-variant-numeric: lining-nums tabular-nums;
+}
+
+.lobby-card .copy-code {
+  margin-top: 8px;
+  padding: 5px 14px;
+  border: 1px solid #d9c6a2;
+  border-radius: 999px;
+  background: #fffdf9;
+  color: #806334;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.lobby-card .copy-code:hover {
+  background: #f3ead9;
+  border-color: #c6a363;
+}
+
+.lobby-card .players-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.lobby-card .player-count {
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: #f3ead9;
+  color: #806334;
+  font-family: Nunito, system-ui, sans-serif;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0;
+  font-variant-numeric: lining-nums tabular-nums;
+}
+
+.lobby-card .hint,
+.lobby-card .muted {
+  color: #8d8578;
+}
+
+.lobby-card .players li {
+  border-bottom-color: #eee6d9;
+  color: #514633;
+}
+
+.lobby-card .badge {
+  background: #f3ead9;
+  color: #806334;
+}
+
+.lobby-card .badge.me {
+  background: #aa8546;
+  color: #fffdf9;
+}
+
+.lobby-card .btn {
+  border: 1px solid #ad8747;
+  background: linear-gradient(135deg, #bd9a5d, #9b7537);
+  box-shadow: 0 5px 14px rgba(153, 114, 51, 0.16);
+}
+
+.lobby-card .btn:not(:disabled):hover {
+  background: linear-gradient(135deg, #aa8546, #89652f);
+  box-shadow: 0 8px 18px rgba(153, 114, 51, 0.24);
+}
+
+.lobby-card .btn:disabled {
+  border-color: #d7cdbb;
+  background: #d7cdbb;
+  box-shadow: none;
+}
+
+.lobby-card .btn.secondary {
+  border-color: #e9dfce;
+  background: #f5efe4;
+  color: #806334;
+  box-shadow: none;
+}
+
+.lobby-card .btn.secondary:not(:disabled):hover {
+  background: #eee3d1;
+}
+
+/* bábuválasztás a lobbiban: mindenkinek más figura jut */
+.figure-picker {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.figure-card {
+  position: relative;
+  display: flex;
+}
+
+.figure-picker .figure {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 10px 4px;
+  border: 1px solid #e9dfce;
+  border-radius: 12px;
+  background: #fbf7ef;
+  color: #514633;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.figure-picker .figure:not(:disabled):hover {
+  background: #f3ead9;
+}
+
+.figure-picker .figure .icon {
+  font-size: 30px;
+  line-height: 1.2;
+}
+
+.figure-picker .figure .owner {
+  color: #8d8578;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.figure-picker .figure:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+.figure-picker .figure.mine {
+  border-color: #aa8546;
+  background: #f3ead9;
+  box-shadow: inset 0 0 0 1px #aa8546;
+  opacity: 1;
+}
+
+/* szem gomb a figurakártya sarkában: a bábu nagyban, 3D-ben */
+.figure-eye {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 1px solid #e9dfce;
+  border-radius: 50%;
+  background: #fffdf9;
+  color: #987039;
+  cursor: pointer;
+}
+
+.figure-eye:hover {
+  background: #f3ead9;
+  border-color: #c6a363;
+}
+
+.figure-preview {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgba(60, 48, 30, 0.35);
+  backdrop-filter: blur(3px);
+}
+
+.figure-preview-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: min(360px, 100%);
+  box-sizing: border-box;
+  padding: 18px 20px;
+  border-radius: 16px;
+  background: #fffdf9;
+  box-shadow: 0 18px 48px rgba(97, 77, 43, 0.25);
+}
+
+.figure-preview-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.figure-preview-head h2 {
+  margin: 0;
+  color: #987039;
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.figure-preview-close {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: #f5efe4;
+  color: #806334;
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.figure-preview-close:hover {
+  background: #eee3d1;
+}
+
+.figure-preview-stage {
+  height: 300px;
+  border-radius: 12px;
+  background: radial-gradient(circle at 50% 35%, #ffffff, #efe6d6);
+  cursor: grab;
+}
+
+.figure-preview-card .hint {
+  margin: 0;
+  color: #8d8578;
+  font-size: 13px;
+  text-align: center;
+}
+
+@media (max-width: 760px) {
+  .home-page {
+    padding: 18px;
+  }
+
+  .home-shell {
+    flex-direction: column;
+    max-width: 520px;
+    min-height: 0;
+  }
+
+  .home-visual {
+    min-height: 280px;
+    padding: 34px;
+  }
+
+  .home-brand h1 {
+    margin-top: 14px;
+    font-size: 66px;
+  }
+
+  .home-card {
+    width: 100%;
+    padding: 36px;
+  }
+
+}
+
+@media (max-width: 420px) {
+  .home-page {
+    padding: 10px;
+  }
+
+  .home-shell {
+    border-radius: 15px;
+  }
+
+  .home-visual {
+    min-height: 235px;
+    padding: 25px;
+  }
+
+  .home-brand h1 {
+    font-size: 56px;
+  }
+
+  .home-card {
+    padding: 28px 22px;
+  }
+
+  .home-form-heading h2 {
+    font-size: 34px;
+  }
+
+  .home-join {
+    flex-direction: column;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-card .btn {
+    transition: none;
+  }
+
+  .home-shell,
+  .home-landscape,
+  .home-brand,
+  .home-brand h1,
+  .home-caption,
+  .home-card > * {
+    animation: none;
+  }
+}

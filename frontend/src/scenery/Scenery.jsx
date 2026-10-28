@@ -8,7 +8,7 @@ import Wildlife from './Wildlife';
 
 // Blenderben készült meseszerű táj: tábla kerete, mesefenyők, négyféle házikó, hóemberek, alpesi grand hotel, gondolás
 // felvonó, felhők, síelő-, snowboardos-, szarvas-, őz- és kabinminta (forrás: blender/palya.blend; a hóember forrása: CREDITS.md)
-const MODEL_URL = '/models/kornyezet.glb';
+export const MODEL_URL = '/models/kornyezet.glb';
 
 function pointsByPrefix(scene, prefix) {
   const nodes = [];

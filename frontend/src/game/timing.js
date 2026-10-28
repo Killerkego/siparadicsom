@@ -1,10 +1,11 @@
 // A mozgások ütemezése. A szerver megadja, mikor történt a mozgás ("at"), és minden böngésző
 // ehhez az időponthoz igazítja az animációt, így mindenkinél egyszerre fut. Ha egy fül közben a
 // háttérben volt, visszaváltáskor ott folytatódik, ahol a többieknél tart.
-// Az értékek egyezzenek a backend/main.py DICE_MS, STEP_MS és JUMP_MS értékeivel.
+// Az értékek egyezzenek a backend/main.py DICE_MS, STEP_MS, JUMP_MS és CARD_MS értékeivel.
 export const DICE_TIME = 1200; // ms, amíg a kocka gurul
 export const STEP_TIME = 300; // ms mezőnként
 export const JUMP_TIME = 900; // ms, felvonós átugrás
+export const CARD_TIME = 1300; // ms, amíg a húzott lap a kamera elé repül
 export const FIELD_COUNT = 40;
 
 const wrap = (n) => ((n % FIELD_COUNT) + FIELD_COUNT) % FIELD_COUNT;
@@ -15,8 +16,13 @@ export function actionStart(action, game) {
   return action.at - (game.server_time - game.received_at);
 }
 
-export function actionEnd(action, start) {
+// a kártyahúzás kezdete: a kocka és a lépések után
+export function cardStart(action, start) {
   return start + (action.dice ? DICE_TIME : 0) + action.moves.reduce((sum, m) => sum + moveTime(m), 0);
+}
+
+export function actionEnd(action, start) {
+  return cardStart(action, start) + (action.card ? CARD_TIME : 0);
 }
 
 // A bábu helyzete mozgás közben: melyik két mező között jár, és hol tart (p: 0..1).
