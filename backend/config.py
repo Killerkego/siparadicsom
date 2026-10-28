@@ -3,7 +3,7 @@
 import json
 from pathlib import Path
 
-MIN_PLAYERS = 1  # tesztelés miatt egyedül is indítható; a kész játékhoz állítsd 2-re
+MIN_PLAYERS = 2  # a feladatleírás szerint 2–4 játékos; egyedüli kipróbáláshoz átmenetileg 1
 MAX_PLAYERS = 4
 DEV_MODE = False  # fejlesztői fül a játékban (bárhova lépés, minden épület); teszteléshez állítsd True-ra
 CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"  # nincs benne 0/O és 1/I, hogy ne lehessen összekeverni
