@@ -5,7 +5,7 @@ from pathlib import Path
 
 MIN_PLAYERS = 1  # tesztelés miatt egyedül is indítható; a kész játékhoz állítsd 2-re
 MAX_PLAYERS = 4
-DEV_MODE = True  # fejlesztői fül a játékban (bárhova lépés, minden épület); a kész játékhoz állítsd False-ra
+DEV_MODE = False  # fejlesztői fül a játékban (bárhova lépés, minden épület); teszteléshez állítsd True-ra
 CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"  # nincs benne 0/O és 1/I, hogy ne lehessen összekeverni
 CODE_LENGTH = 6
 PAWN_COLORS = ["#d63031", "#0984e3", "#00b894", "#fdcb6e"]
