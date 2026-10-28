@@ -4,7 +4,7 @@ A feladatleírás 12.2 és I/14. pontja szerinti ellenőrzés. A játékszabály
 ellenőrzik a backendben (`backend/tests/`), a Python beépített `unittest` moduljával, külön telepítés
 nélkül.
 
-**Utolsó futtatás:** 2026. október 28. · **Eredmény: 62 teszt, mind sikeres (OK)** · futási idő kb. 2,5 mp
+**Utolsó futtatás:** 2026. október 28. · **Eredmény: 62 teszt, mind sikeres (OK)** · futási idő kb. 2 mp
 
 ## Futtatás
 
@@ -46,11 +46,51 @@ megvehető elemet építi, a többi döntést véletlenül hozza. Minden lépés
 
 | Játékosok | Győzelemmel véget ért | Átlagos hossz | Legrövidebb | Leghosszabb |
 |---|---|---|---|---|
-| 2 | 40 / 40 | 80 kör | 40 kör | 152 kör |
-| 3 | 40 / 40 | 69 kör | 35 kör | 101 kör |
-| 4 | 40 / 40 | 63 kör | 33 kör | 96 kör |
+| 2 | 40 / 40 | 70 kör | 36 kör | 159 kör |
+| 3 | 40 / 40 | 66 kör | 40 kör | 120 kör |
+| 4 | 40 / 40 | 66 kör | 43 kör | 100 kör |
 
 (Egy kör = mindenki egyszer dob.) Egyetlen játék sem akadt el, és szabálytalan állapot sem keletkezett.
+
+## Játékegyensúly (PDF 8.4 és 12.)
+
+A pénzösszegeket szimulációval hangoltuk: játékosszámonként 150 teljes játék, kétféle bottal
+(az egyik mindent elkölt, a másik tartalékot megtart). A cél az volt, hogy a játék hossza ugyanannyi
+maradjon, de a bevételek és a kiadások arányosak legyenek egymással és a kártyákkal: az eredeti
+értékeknél a mezők (+1000 / −900) jóval gyengébbek voltak a kártyáknál (~2000), és a nettó bevétel
+kicsi volt, ezért a játékosok sokszor hitelből éltek.
+
+| Érték | Előtte | Most |
+|---|---|---|
+| Építési elemek összesen | 26 000 HK | 42 000 HK (az arányok megmaradtak) |
+| Kezdőtőke | 6000 HK (23%) | 10 000 HK (24%) |
+| Bevételi mező | +1000 HK | +2200 HK |
+| Kiadási mező | −900 HK | −1300 HK |
+| Győzelemhez szükséges pénz | 5000 HK | 7000 HK |
+| Síverseny díja | 1000 HK | 1500 HK |
+| Gambling nyereménye | 1500 HK | 2000 HK |
+| Csapda (pénz) | 800 HK | 1000 HK |
+| Oktatás körönként | 300 HK | 500 HK |
+| START, felvonó, hitel (1000-es egység, 10% kamat), kártyák | változatlan | változatlan |
+
+| Mutató (150 játék játékosszámonként) | Előtte | Most |
+|---|---|---|
+| Átlagos hossz 2 / 3 / 4 fővel | 75 / 68 / 64 kör | 75 / 65 / 62 kör |
+| Hitelfelvétel egy játékban, ha mindent elköltenek (2 / 3 / 4 fő) | 13,7 / 18,8 / 24,7 | 12,4 / 15,8 / 20,2 |
+| Hitelfelvétel egy játékban, 2000 HK tartalékkal (2 / 3 / 4 fő) | – | 4,7 / 6,5 / 7,7 |
+| Győzelmek a kezdési sorrend szerint, 2 fővel | 83 / 67 | 77 / 73 |
+| A vesztesek átlagos építkezése a játék végén | 6,4–6,7 / 8 | 6,2–6,9 / 8 |
+
+Indoklás:
+
+- A **mezők a kártyákhoz igazodnak**: egy jó lap átlagosan ~2100 HK-t ér, a bevételi mező 2200-at; egy rossz
+  lap ~1550 HK-ba kerül, a kiadási mező 1300-ba. Így egyik mező sem jelentéktelen a kártyák mellett.
+- A **bevétel több, mint a kiadás** (2200 : 1300), ezért a játékosok folyamatosan haladnak; a nagyobb
+  építési árak tartják meg a játék eredeti hosszát. Aki tartalékot tart, ritkán szorul hitelre,
+  aki mindent elkölt, az gyakrabban – a pénzbeosztásnak így valódi szerepe van.
+- A **START 2000 HK és a kártyák összegei maradtak**, mert ezek a kártyaképeken is szerepelnek
+  (Helikopter transzfer, Gyenge árfolyam, a nyeremény- és veszteségkártyák).
+- A kezdési sorrend alig számít, és a vesztesek is többnyire 6–7 elemnél tartanak a végén: a játék szoros.
 
 ## A tesztelés közben talált és javított hibák
 

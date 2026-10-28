@@ -482,7 +482,8 @@ class MoneyShortageTests(unittest.TestCase):
         player["money"] = 100
         put(player, field_id("kiadas"))
         fields.land(game, player, [])
-        borrowed = 1000  # 800 hiányzik, 1000-es egységekben
+        unit = RULES["loan_unit"]
+        borrowed = -(-(RULES["expense_field"] - 100) // unit) * unit  # a hiány, egész egységekre kerekítve
         self.assertGreaterEqual(player["money"], 0)
         self.assertEqual(player["money"], 100 + borrowed - RULES["expense_field"])
         self.assertEqual(player["loan"], borrowed * (100 + RULES["loan_interest"]) // 100)
@@ -536,7 +537,8 @@ class BuildingTests(unittest.TestCase):
         self.assertIsNot(current(game), player, "egy vásárlás után a kör véget ér")
 
     def test_not_enough_money(self):
-        game, player = self.build_turn(money=3000)
+        # a Pályarendszerre éppen elég, a Szállodára nem
+        game, player = self.build_turn(money=BUILDING_BY_ID["palya"]["price"] + 100)
         self.assertIn("szalloda", game["pending"]["blocked"])
         self.assertIn("Nincs elég pénzed", game["pending"]["blocked"]["szalloda"])
         with self.assertRaises(HTTPException) as err:
