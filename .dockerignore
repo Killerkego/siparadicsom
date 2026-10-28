@@ -1,0 +1,18 @@
+# A Docker fordításhoz csak a forráskód kell; a többit a konténer maga készíti el.
+**/node_modules
+frontend/dist
+backend/.venv
+**/__pycache__
+backend/tests
+blender
+.git
+.github
+.vscode
+.idea
+.claude
+*.log
+.env
+.env.*
+Dockerfile
+.dockerignore
+docker-compose.yml

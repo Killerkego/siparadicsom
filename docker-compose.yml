@@ -1,0 +1,71 @@
+# Futtatás a szerveren Dockerrel (a GitHub által elkészített image-ből):
+#   A GitHub (github.com/Killerkego/siparadicsom) minden main-re feltöltés után elkészíti az image-et, és a
+#   deploy.yml telepíti a szerverre. Kézzel (az image privát, ezért előbb: docker login ghcr.io egy
+#   read:packages jogú tokennel): docker compose pull && docker compose up -d
+#
+# Két konténer fut:
+#   aranyhegy  a játék szervere (szabályok, élő kapcsolat, a lefordított játék); csak a szerveren belül figyel
+#   caddy      a 80-as és 443-as porton fogadja a https://zsolt.codes kéréseit, magától kér és megújít
+#              HTTPS-tanúsítványt (Let's Encrypt), és továbbadja a kéréseket (a WebSocketet is) a játéknak
+# A domain DNS-e (zsolt.codes és www.zsolt.codes) a szerverre mutasson, a 80-as és 443-as port legyen nyitva.
+services:
+  aranyhegy:
+    # a deploy.yml az IMAGE változóban adja meg az image-et; kézi indításnál ez az alapértelmezés
+    image: ${IMAGE:-ghcr.io/killerkego/siparadicsom:latest}
+    container_name: aranyhegy
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8080:8080"
+    mem_limit: 256m
+    cpus: 1.0
+    # a konténer semmit sem ír: csak olvasható fájlrendszer, extra jogosultságok nélkül
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    logging:
+      driver: json-file
+      options:
+        max-size: "1m"
+        max-file: "3"
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: caddy
+    restart: unless-stopped
+    depends_on:
+      - aranyhegy
+    ports:
+      - "80:80"
+      - "443:443"
+    configs:
+      - source: caddyfile
+        target: /etc/caddy/Caddyfile
+    volumes:
+      # a tanúsítványok itt maradnak meg újraindítás és frissítés után is
+      - caddy_data:/data
+      - caddy_config:/config
+    mem_limit: 128m
+    security_opt:
+      - no-new-privileges:true
+    logging:
+      driver: json-file
+      options:
+        max-size: "1m"
+        max-file: "3"
+
+configs:
+  caddyfile:
+    content: |
+      zsolt.codes {
+        encode zstd gzip
+        reverse_proxy aranyhegy:8080
+      }
+      www.zsolt.codes {
+        redir https://zsolt.codes{uri} permanent
+      }
+
+volumes:
+  caddy_data:
+  caddy_config:

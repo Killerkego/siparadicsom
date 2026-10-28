@@ -6,7 +6,10 @@ A frontend `npm run dev` parancsa magától elindítja. Külön futtatás a proj
     backend/.venv/Scripts/python -m uvicorn main:app --app-dir backend --port 8000 --reload --reload-dir backend
 """
 
+from pathlib import Path
+
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
+from fastapi.staticfiles import StaticFiles
 
 import bots
 import play
@@ -250,3 +253,12 @@ async def game_socket(ws: WebSocket, code: str, player_id: str):
         pass
     finally:
         sockets.discard(ws)
+
+
+# --- a lefordított játék (élesben) ---
+
+# Élesben (Docker) ugyanez a szerver adja ki a lefordított frontendet is, így az /api, a /ws és a játék
+# egy címen van. Fejlesztés közben a frontend/dist nincs meg, akkor a Vite szolgálja ki.
+DIST = Path(__file__).resolve().parent.parent / "frontend" / "dist"
+if DIST.is_dir():
+    app.mount("/", StaticFiles(directory=DIST, html=True), name="frontend")

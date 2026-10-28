@@ -1,0 +1,143 @@
+# Automatikus telepítés a szerverre (https://zsolt.codes): miután a „Docker image” munkafolyamat sikeresen
+# elkészítette és feltöltötte az új image-et (main ágra történt push után), a GitHub SSH-val belép a szerverre,
+# felmásolja a docker-compose.yml-t, letölti az új image-et, újraindítja a játékot, és ellenőrzi, hogy válaszol-e.
+# Csak a Killerkego/siparadicsom repóban fut (más másolatban nincsenek meg a szerver titkai).
+# A repó privát, ezért az image is privát: a szerver a munkafolyamat ideiglenes GITHUB_TOKEN-jével lép be a
+# ghcr.io-ra a letöltéshez, a végén kilép (külön tokent nem kell a szerveren tárolni).
+#
+# Szükséges titkok (Settings → Secrets and variables → Actions; csak a repó adminja adhatja meg),
+# ugyanazok, mint a City-Building-Game repóban:
+#   SERVER_IP    a szerver IP-címe
+#   SERVER_USER  a felhasználó, akivel belép (pl. zsolt) – legyen tagja a docker csoportnak
+#   SSH_KEY      a privát kulcs teljes tartalma (-----BEGIN ... -----END ... sorokkal együtt)
+# Kézzel is indítható: Actions → Deploy to server → Run workflow.
+name: Deploy to server
+
+on:
+  workflow_run:
+    workflows: ["Docker image"]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  # a privát image letöltéséhez a szerveren
+  packages: read
+
+# egyszerre csak egy telepítés fusson, és ne szakítsuk félbe a folyamatban lévőt
+concurrency:
+  group: deploy-server
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    # csak a közös repóban, sikeres, main ágra történt push utáni fordítás után (pull requestnél nem), vagy kézi indításkor
+    if: ${{ github.repository == 'Killerkego/siparadicsom' && (github.event_name == 'workflow_dispatch' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push')) }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      APP_DIR: siparadicsom
+      # a régi telepítés mappája a szerveren: az ottani konténerek (városépítő és a Caddy) foglalják a 80-as és
+      # 443-as portot, ezért a zsolt.codes átvétele előtt leállítjuk őket (az adataik megmaradnak)
+      OLD_APP_DIR: city-building-game
+    steps:
+      - name: Kód letöltése (a docker-compose.yml miatt)
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+
+      - name: Image neve (a registry csak kisbetűt fogad el)
+        run: echo "IMAGE=ghcr.io/${GITHUB_REPOSITORY,,}:latest" >> "$GITHUB_ENV"
+
+      - name: SSH beállítása
+        env:
+          SSH_KEY: ${{ secrets.SSH_KEY }}
+          SERVER_IP: ${{ secrets.SERVER_IP }}
+        run: |
+          if [ -z "$SSH_KEY" ] || [ -z "$SERVER_IP" ]; then echo "Hiányzik az SSH_KEY vagy a SERVER_IP titok."; exit 1; fi
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "$SSH_KEY" | tr -d '\r' > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          # a szerver azonosítója (első kapcsolódáskor rögzítve)
+          ssh-keyscan -T 15 -H "$SERVER_IP" >> ~/.ssh/known_hosts 2>/dev/null
+          if [ ! -s ~/.ssh/known_hosts ]; then echo "A szerver nem érhető el SSH-n ($SERVER_IP:22)."; exit 1; fi
+
+      - name: docker-compose.yml feltöltése
+        env:
+          SERVER_IP: ${{ secrets.SERVER_IP }}
+          SERVER_USER: ${{ secrets.SERVER_USER }}
+        run: |
+          # a távoli útvonalak a felhasználó saját mappájához képest értendők (pl. /home/zsolt/siparadicsom)
+          ssh -i ~/.ssh/deploy_key -o BatchMode=yes "$SERVER_USER@$SERVER_IP" "mkdir -p $APP_DIR"
+          scp -i ~/.ssh/deploy_key -o BatchMode=yes docker-compose.yml "$SERVER_USER@$SERVER_IP:$APP_DIR/docker-compose.yml"
+          # a compose ebből tudja, melyik image-et töltse le
+          ssh -i ~/.ssh/deploy_key -o BatchMode=yes "$SERVER_USER@$SERVER_IP" "echo IMAGE=$IMAGE > $APP_DIR/.env"
+
+      - name: Bejelentkezés a ghcr.io-ra a szerveren (privát image)
+        env:
+          SERVER_IP: ${{ secrets.SERVER_IP }}
+          SERVER_USER: ${{ secrets.SERVER_USER }}
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # a token a szabványos bemeneten megy át, így nem látszik a parancssorban; a munkafolyamat végén lejár
+          printf '%s' "$GHCR_TOKEN" | ssh -i ~/.ssh/deploy_key -o BatchMode=yes "$SERVER_USER@$SERVER_IP" \
+            "docker login ghcr.io -u '${{ github.actor }}' --password-stdin"
+
+      - name: Új verzió letöltése és indítása
+        env:
+          SERVER_IP: ${{ secrets.SERVER_IP }}
+          SERVER_USER: ${{ secrets.SERVER_USER }}
+        run: |
+          ssh -i ~/.ssh/deploy_key -o BatchMode=yes "$SERVER_USER@$SERVER_IP" "APP_DIR=$APP_DIR OLD_APP_DIR=$OLD_APP_DIR bash -s" <<'EOF'
+          set -euo pipefail
+          cd ~/"$APP_DIR"
+          docker compose pull
+          # a régi telepítés (City Building) leállítása, ha még fut: ő foglalja a 80/443-as portot és a „caddy” nevet
+          if [ -f ~/"$OLD_APP_DIR"/docker-compose.yml ] && [ -n "$(cd ~/"$OLD_APP_DIR" && docker compose ps -q)" ]; then
+            echo "A régi telepítés leállítása: ~/$OLD_APP_DIR"
+            (cd ~/"$OLD_APP_DIR" && docker compose down --remove-orphans)
+          fi
+          if ! docker compose up -d --remove-orphans; then
+            echo "Nem sikerült elindítani. Ha a 80-as vagy 443-as portot más konténer foglalja,"
+            echo "állítsd le és töröld a szerveren: docker rm -f <konténer neve>. A futó konténerek:"
+            docker ps --format 'table {{.Names}}\t{{.Image}}\t{{.Ports}}'
+            exit 1
+          fi
+          # a régi, már nem használt image-ek törlése (helytakarékosság)
+          docker image prune -f
+          # megvárjuk, amíg a játék és a Caddy válaszol
+          for i in $(seq 1 30); do
+            if curl -fsS -o /dev/null http://127.0.0.1:8080/api/games && curl -sS -o /dev/null -H "Host: zsolt.codes" http://127.0.0.1/; then
+              echo "A játék és a Caddy fut."; docker compose ps; exit 0
+            fi
+            sleep 2
+          done
+          echo "A játék vagy a Caddy nem válaszol."; docker compose ps; docker compose logs --tail=50; exit 1
+          EOF
+
+      - name: Nyilvános elérés ellenőrzése (https://zsolt.codes)
+        # az első indításkor a Caddy pár másodperc alatt kéri le a tanúsítványt; ha ez nem sikerül, csak figyelmeztet
+        continue-on-error: true
+        run: |
+          for i in $(seq 1 12); do
+            if curl -fsS -o /dev/null https://zsolt.codes/api/games; then echo "Elérhető: https://zsolt.codes"; exit 0; fi
+            sleep 5
+          done
+          echo "::warning::A https://zsolt.codes még nem érhető el (tanúsítvány, DNS vagy 443-as port). A szerveren: docker logs caddy"
+          exit 1
+
+      - name: Kijelentkezés a ghcr.io-ról a szerveren
+        if: always()
+        continue-on-error: true
+        env:
+          SERVER_IP: ${{ secrets.SERVER_IP }}
+          SERVER_USER: ${{ secrets.SERVER_USER }}
+        run: |
+          if [ -f ~/.ssh/deploy_key ]; then
+            ssh -i ~/.ssh/deploy_key -o BatchMode=yes "$SERVER_USER@$SERVER_IP" "docker logout ghcr.io" || true
+          fi
+
+      - name: SSH kulcs törlése
+        if: always()
+        run: rm -f ~/.ssh/deploy_key
