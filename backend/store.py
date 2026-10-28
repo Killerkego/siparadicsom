@@ -6,6 +6,7 @@ import uuid
 
 from fastapi import HTTPException, WebSocket
 
+from deck import CARDS, new_deck
 from config import (
     BUILDINGS,
     CODE_ALPHABET,
@@ -48,6 +49,24 @@ def new_player(game: dict | None, name: str) -> dict:
         "in_school": False,
         "buildings": [],  # a megépített elemek azonosítói, vásárlási sorrendben
         "loan": 0,  # a banknak tartozott összeg kamattal; a START-on törleszt, hitellel nem lehet nyerni
+        "effects": new_effects(),  # a kártyák későbbi vagy több körös hatásai
+    }
+
+
+def new_effects() -> dict:
+    """A kártyák függőben lévő hatásai; 0 = nincs. A „kör” mindig a játékos saját köre."""
+    return {
+        "income_boost": 0,  # Szezonnyitó buli: ennyi bevételi mezőn +50%
+        "expense_half": 0,  # Könyvelő: ennyi kiadási mezőn csak a fele
+        "build_discount": 0,  # Szponzor: még ennyi körig egy épület 40%-kal olcsóbb
+        "build_markup": 0,  # Negatív visszajelzés: ennyi épület 20%-kal drágább
+        "build_block": 0,  # IT-lefagyás, Sztrájk, Felvonó meghibásodása: ennyiszer nem vásárolhat
+        "shield_bad": 0,  # Lojális ügyfél: még ennyi körig egy rossz kártya nem számít
+        "block_good": 0,  # Kártyablokk: még ennyi körig egy jó kártya nem számít
+        "weak_start": 0,  # Gyenge árfolyam: ennyi START-áthaladásnál csak kevesebb jár
+        "max_move": 0,  # Felvonósztrájk: a következő dobásnál legfeljebb 3 mező
+        "roll_minus": 0,  # Jegesedés: a következő dobásból 1-et le kell vonni
+        "skip_turns": 0,  # Elakadás, Kiürítés, Rulett: ennyi körből kimarad
     }
 
 
@@ -65,6 +84,8 @@ def new_game(host: dict) -> dict:
         "traps": {},  # mező sorszáma (szövegként) -> ki rakta le és milyet
         "log": [],
         "winner_id": None,
+        "deck": new_deck(),  # a húzópakli (a teteje az első elem); a kliens csak a darabszámot látja
+        "discard": [],  # a már kihúzott lapok; ha a pakli elfogy, ezekből keverünk újat
     }
     return games[code]
 
@@ -96,6 +117,8 @@ def public_state(game: dict) -> dict:
         "log": game["log"],
         "rules": RULES,
         "buildings": BUILDINGS,
+        "cards": CARDS,
+        "deck_count": len(game["deck"]),
         "server_time": now_ms(),  # ebből számolja a kliens, mennyit siet/késik az órája
         "min_players": MIN_PLAYERS,
         "max_players": MAX_PLAYERS,

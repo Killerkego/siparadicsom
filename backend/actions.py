@@ -47,15 +47,26 @@ def record_action(game: dict, player: dict, dice_value: int | None, moves: list[
     }
 
 
-def walk(game: dict, player: dict, steps: int) -> dict:
-    """Előre (pozitív) vagy hátra (negatív) lépteti a bábut. Előre a START-on át bónusz jár."""
+def walk(game: dict, player: dict, steps: int, bonus: int | None = None) -> dict:
+    """Előre (pozitív) vagy hátra (negatív) lépteti a bábut. Előre a START-on át bónusz jár
+    (`bonus`: kártya által megadott összeg a szokásos helyett)."""
     start = player["position"]
     if steps > 0 and start + steps >= FIELD_COUNT:
-        player["money"] += RULES["start_bonus"]
-        add_log(game, f"{player['name']} áthaladt a START-on: +{RULES['start_bonus']} HK.")
-        repay_loan(game, player)
+        start_bonus(game, player, bonus)
     player["position"] = (start + steps) % FIELD_COUNT
     return {"type": "walk", "from": start, "steps": steps}
+
+
+def start_bonus(game: dict, player: dict, amount: int | None = None) -> None:
+    """A START-on járó pénz (Gyenge árfolyam után kevesebb), utána a bank levonja a hitelt."""
+    if amount is None:
+        amount = RULES["start_bonus"]
+        if player["effects"]["weak_start"]:
+            player["effects"]["weak_start"] -= 1
+            amount = RULES["weak_start_bonus"]
+    player["money"] += amount
+    add_log(game, f"{player['name']} áthaladt a START-on: +{amount} HK.")
+    repay_loan(game, player)
 
 
 def jump(player: dict, target: int) -> dict:

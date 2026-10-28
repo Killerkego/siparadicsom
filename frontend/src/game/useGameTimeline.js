@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { DICE_TIME, actionEnd, actionStart, cardStart, shownField } from './timing';
 
 // A játék időbeli állapota a böngészőben. Az utolsó mozgás a szerver órája szerinti időpontban indult;
@@ -36,10 +36,13 @@ export function useGameTimeline(game) {
     () => action?.dice && { value: action.dice, seq: action.seq, start: action.start },
     [action],
   );
-  const cardDraw = useMemo(
-    () => action?.card && { seq: action.seq, start: cardStart(action, action.start) },
-    [action],
-  );
+  // az utolsó kártyahúzás (a lap azonosítójával); megmarad a következő mozgás alatt is, pl. ha a lap
+  // maga mozgatja a bábut, hogy a kamera előtti lap ne tűnjön el hirtelen
+  const lastDraw = useRef(null);
+  if (action?.card && lastDraw.current?.seq !== action.seq) {
+    lastDraw.current = { seq: action.seq, start: cardStart(action, action.start), card: action.card };
+  }
+  const cardDraw = lastDraw.current;
 
   // a mozgó bábu az animáció szerinti mezőn látszik, a többiek a szerver szerinti helyükön
   const fieldOf = (player) => shownField(player, action, now);

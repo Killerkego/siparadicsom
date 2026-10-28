@@ -1,14 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
 import * as THREE from 'three';
 import { GAP, TILE_H } from './layout';
-import { TILE_COLOR, makeTileTexture } from './textures';
+import { makeTileTexture, tileColor } from './textures';
 
 export default function Tile({ field, placement, onHover }) {
   const [hovered, setHovered] = useState(false);
   const [w, d] = placement.size;
 
   const materials = useMemo(() => {
-    const side = new THREE.MeshStandardMaterial({ color: TILE_COLOR });
+    const side = new THREE.MeshStandardMaterial({ color: tileColor(field) });
     const top = new THREE.MeshStandardMaterial({ map: makeTileTexture(field, w, d) });
     // BoxGeometry lapjainak sorrendje: +x, -x, +y (teteje), -y, +z, -z
     return [side, side, top, side, side, side];

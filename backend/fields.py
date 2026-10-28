@@ -1,6 +1,8 @@
-"""A mezők hatása, ahová a bábu érkezett: kártyahúzás és a speciális mezők (oktatás, síverseny,
-gambling, felvonó, csapda). Ha a játékosnak döntenie kell, a játék `pending` mezőjébe kerül."""
+"""A mezők hatása, ahová a bábu érkezett: bevétel, kiadás, kártyahúzás és a speciális mezők
+(oktatás, síverseny, gambling, felvonó, csapda). Ha a játékosnak döntenie kell, a játék `pending`
+mezőjébe kerül."""
 
+import cards
 from actions import add_log, dice, pay, walk
 from config import BOARD, LIFTS, RULES
 from store import find_player
@@ -8,21 +10,38 @@ from store import find_player
 
 def land(game: dict, player: dict, moves: list[dict]) -> None:
     """Az érkezési mező hatása. A visszaléptetés (csapda) a `moves` listába kerül az animációhoz."""
-    pos = player["position"]
-    field = BOARD[pos]
-    if field["type"] == "kartya":
-        draw_card(game, player)
-    handler = SPECIAL_FIELDS.get(field.get("special"))
+    field = BOARD[player["position"]]
+    handler = FIELD_TYPES.get(field["type"]) or SPECIAL_FIELDS.get(field.get("special"))
     if handler:
         handler(game, player, moves)
 
 
-def draw_card(game: dict, player: dict) -> None:
-    """A kártyák tartalma később jön: most csak a húzás látszik, hatása nincs.
-    A lap addig marad a képernyőn, amíg a húzó játékos le nem okézza."""
-    game["card_draw"] = True
-    game["pending"] = {"type": "card", "player_id": player["id"]}
-    add_log(game, f"{player['name']} húzott egy kártyát.")
+def income(game: dict, player: dict, moves: list[dict]) -> None:
+    """Bevételi mező: fix összeg (Szezonnyitó buli után 50%-kal több)."""
+    amount = RULES["income_field"]
+    extra = ""
+    if player["effects"]["income_boost"]:
+        player["effects"]["income_boost"] -= 1
+        amount = amount * 3 // 2
+        extra = " (Szezonnyitó buli: +50%)"
+    player["money"] += amount
+    add_log(game, f"{player['name']} bevételi mezőre lépett: +{amount} HK{extra}.")
+
+
+def expense(game: dict, player: dict, moves: list[dict]) -> None:
+    """Kiadási mező: fix összeg (Könyvelő után a fele); ha nincs rá pénz, hitelből."""
+    amount = RULES["expense_field"]
+    extra = ""
+    if player["effects"]["expense_half"]:
+        player["effects"]["expense_half"] -= 1
+        amount //= 2
+        extra = " (Könyvelő: csak a fele)"
+    pay(game, player, amount)
+    add_log(game, f"{player['name']} kiadási mezőre lépett: -{amount} HK{extra}.")
+
+
+def card(game: dict, player: dict, moves: list[dict]) -> None:
+    cards.draw(game, player)
 
 
 def school(game: dict, player: dict, moves: list[dict]) -> None:
@@ -76,6 +95,12 @@ def trap(game: dict, player: dict, moves: list[dict]) -> None:
         owner["money"] += RULES["trap_money"]
         add_log(game, f"{player['name']} {owner['name']} csapdájába lépett: {RULES['trap_money']} HK-t fizet neki.")
 
+
+FIELD_TYPES = {
+    "bevetel": income,
+    "kiadas": expense,
+    "kartya": card,
+}
 
 SPECIAL_FIELDS = {
     "oktatas": school,

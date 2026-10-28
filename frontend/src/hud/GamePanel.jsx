@@ -29,6 +29,7 @@ export default function GamePanel({ game, settled, playerId, timeline, busy, err
           pending={pending}
           rules={game.rules}
           buildings={game.buildings}
+          cards={game.cards}
           me={me}
           busy={busy}
           onChoose={onChoose}
