@@ -88,6 +88,8 @@ def new_game(host: dict, public: bool = False) -> dict:
         "field_event": None,  # az utolsó bevételi/kiadási mező története: ki, hol, mennyi és miért
         "log": [],
         "winner_id": None,
+        "end_reason": None,  # "left": a többiek kiléptek, a bent maradt nyert (különben a győzelmi feltételek)
+        "shop_discount": None,  # aki ebben a körben dobással vásárlási mezőre lépett (kártyával nem jár)
         "deck": new_deck(),  # a húzópakli (a teteje az első elem); a kliens csak a darabszámot látja
         "discard": [],  # a már kihúzott lapok; ha a pakli elfogy, ezekből keverünk újat
     }
@@ -115,6 +117,7 @@ def public_state(game: dict) -> dict:
         "players": players,
         "turn_player_id": players[game["turn"]]["id"] if game["status"] == "playing" else None,
         "winner_id": game["winner_id"],
+        "end_reason": game["end_reason"],
         # az utolsó mozgás (dobás, lépések, kártyahúzás); az "at" időponthoz igazítva mindenkinél egyszerre fut
         "last_action": game["last_action"],
         "pending": game["pending"],

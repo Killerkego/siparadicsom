@@ -63,6 +63,12 @@ def card(game: dict, player: dict, moves: list[dict]) -> None:
     cards.draw(game, player)
 
 
+def shop(game: dict, player: dict, moves: list[dict]) -> None:
+    """Vásárlási mező: a kör végi építkezés kedvezményes. Csak dobással érkezve jár (a kártyával
+    elért mező hatása nem érvényesül), ezért itt jegyezzük fel, nem a kör végén a bábu helye alapján."""
+    game["shop_discount"] = player["id"]
+
+
 def school(game: dict, player: dict, moves: list[dict]) -> None:
     """Oktatás: páros dobással mehet tovább, addig minden kör elején fix összeget kap."""
     player["in_school"] = True
@@ -133,6 +139,7 @@ FIELD_TYPES = {
     "bevetel": income,
     "kiadas": expense,
     "kartya": card,
+    "vasarlas": shop,
 }
 
 SPECIAL_FIELDS = {

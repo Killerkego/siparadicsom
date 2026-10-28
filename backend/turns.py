@@ -3,7 +3,7 @@
 from fastapi import HTTPException
 
 from actions import add_log, animating
-from config import BOARD, BUILDING_BY_ID, BUILDINGS, RULES
+from config import BUILDING_BY_ID, BUILDINGS, RULES
 
 # a kör végén fogyó, több körös kártyahatások és a lejáratkor kiírt név
 TIMED_EFFECTS = {"build_discount": "Szponzor", "shield_bad": "Lojális ügyfél", "block_good": "Kártyablokk"}
@@ -78,7 +78,7 @@ def finish_turn(game: dict, player: dict) -> None:
         add_log(game, f"{player['name']} ebben a körben nem vásárolhat épületet (kártya).")
         close_turn(game, player)
         return
-    discount = RULES["shop_discount"] if BOARD[player["position"]]["type"] == "vasarlas" else 0
+    discount = RULES["shop_discount"] if game["shop_discount"] == player["id"] else 0
     missing = [b for b in BUILDINGS if b["id"] not in player["buildings"]]
     problems = {b["id"]: build_problem(player, b, discount) for b in missing}
     options = [b for b, problem in problems.items() if problem is None]
@@ -109,6 +109,7 @@ def close_turn(game: dict, player: dict) -> None:
         add_log(game, f"{player['name']} felépítette a teljes Aranyhegy Szállót és nyert!")
         return
     game["pending"] = None
+    game["shop_discount"] = None
     tick_effects(game, player)
     next_player(game)
 

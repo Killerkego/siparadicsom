@@ -10,6 +10,7 @@ from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 
 import bots
 import play
+from actions import add_log
 from config import DEV_MODE, FIGURE_COUNT, MAX_PLAYERS, MIN_PLAYERS
 from schemas import ChoiceIn, CreateIn, DevMoveIn, FigureIn, PlayerIn, PlayerRef, VisibilityIn
 from store import (
@@ -159,13 +160,26 @@ async def leave_game(code: str, body: PlayerRef):
         return {"ok": True}
     if game["host_id"] == body.player_id:
         game["host_id"] = humans[0]["id"]  # a következő (emberi) játékos lesz a házigazda
-    if game["pending"] and game["pending"]["player_id"] == body.player_id:
+    pending = game["pending"]
+    if pending and pending["player_id"] == body.player_id:
+        # a még el nem fogadott lap(ok) a dobott lapok közé kerülnek, hogy a 40 lapos pakli megmaradjon
+        if pending["type"] == "card":
+            game["discard"].append(pending["card"])
+        elif pending["type"] == "card_pick":
+            game["discard"].extend(pending["options"])
         game["pending"] = None
     game["traps"] = {f: t for f, t in game["traps"].items() if t["owner"] != body.player_id}
     # a kör annál marad, aki eddig is következett volna
     if index < game["turn"]:
         game["turn"] -= 1
     game["turn"] %= len(game["players"])
+    if game["status"] == "playing" and len(game["players"]) == 1:
+        # egyedül nem lehet játszani: aki bent maradt, megnyeri a szezont
+        last = game["players"][0]
+        game["status"] = "finished"
+        game["winner_id"] = last["id"]
+        game["end_reason"] = "left"
+        add_log(game, f"Mindenki más kilépett: {last['name']} nyerte a szezont.")
     await updated(game)
     return {"ok": True}
 

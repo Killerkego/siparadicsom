@@ -36,33 +36,40 @@ export default function Victory({ game, playerId, onLeave }) {
 
         <h2 id="victory-title">{isMe ? 'Nyertél!' : `${winner.name} nyert!`}</h2>
         <p className="victory-sub">
-          {isMe ? 'Felépítetted' : 'Felépítette'} a teljes Aranyhegy Szállót · {figure.name}
+          {game.end_reason === 'left'
+            ? `Mindenki más kilépett, így ${isMe ? 'te maradtál' : 'ő maradt'} a hegyen · ${figure.name}`
+            : `${isMe ? 'Felépítetted' : 'Felépítette'} a teljes Aranyhegy Szállót · ${figure.name}`}
         </p>
 
-        <ul className="victory-goals">
-          <li>
-            <b>
-              {winner.buildings.length}/{game.buildings.length}
-            </b>
-            <small>elem kész</small>
-          </li>
-          <li>
-            <b>{hk(winner.money)}</b>
-            <small>legalább {hk(game.rules.win_money)}</small>
-          </li>
-          <li>
-            <b>Nincs</b>
-            <small>tartozás</small>
-          </li>
-        </ul>
+        {/* a teljesült győzelmi feltételek és a kész szálló; ha a többiek kiléptek, ezek nem teljesültek */}
+        {game.end_reason !== 'left' && (
+          <>
+            <ul className="victory-goals">
+              <li>
+                <b>
+                  {winner.buildings.length}/{game.buildings.length}
+                </b>
+                <small>elem kész</small>
+              </li>
+              <li>
+                <b>{hk(winner.money)}</b>
+                <small>legalább {hk(game.rules.win_money)}</small>
+              </li>
+              <li>
+                <b>Nincs</b>
+                <small>tartozás</small>
+              </li>
+            </ul>
 
-        <ul className="victory-buildings">
-          {game.buildings.map((b, i) => (
-            <li key={b.id} style={{ animationDelay: `${900 + i * 90}ms` }}>
-              {b.name}
-            </li>
-          ))}
-        </ul>
+            <ul className="victory-buildings">
+              {game.buildings.map((b, i) => (
+                <li key={b.id} style={{ animationDelay: `${900 + i * 90}ms` }}>
+                  {b.name}
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
 
         {others.length > 0 && (
           <ol className="victory-ranking" start={2}>

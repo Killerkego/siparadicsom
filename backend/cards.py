@@ -165,6 +165,9 @@ def defection(game, player):  # H06
         other["position"] = player["position"]
         move(game, player, [jump(player, behind)])
         add_log(game, f"{player['name']} és {other['name']} helyet cserélt.")
+        if other["in_school"]:  # elkerült az oktatás mezőjéről, így az oktatásnak is vége
+            other["in_school"] = False
+            add_log(game, f"{other['name']} a helycserével kikerült az oktatásról.")
     else:
         move(game, player, [jump(player, 1)])
         add_log(game, f"{player['name']} mögött nem áll senki: az 1. mezőre lépett.")

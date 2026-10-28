@@ -591,6 +591,7 @@ class BuildingTests(unittest.TestCase):
             player["money"] = money
         player["buildings"] = list(owned)
         put(player, field if field is not None else field_id("semleges"))
+        fields.land(game, player, [])  # a mezőre érkezés (vásárlási mezőn ettől jár a kedvezmény)
         play.finish_turn(game, player)
         return game, player
 
@@ -698,6 +699,77 @@ class VictoryTests(unittest.TestCase):
         fresh, _ = new_game(2)
         self.assertEqual(fresh["status"], "playing")
         self.assertNotEqual(fresh["code"], game["code"])
+
+
+class EdgeCaseTests(unittest.TestCase):
+    """Ritka helyzetek: kilépés függő kártyával, helycsere oktatásról, kártyás vásárlási mező, egyedül maradás."""
+
+    def test_leaving_with_a_pending_card_keeps_all_40_cards(self):
+        for players in (2, 3):
+            with self.subTest(players=players):
+                game, _ = new_game(players)
+                player = current(game)
+                put(player, field_id("kartya"))
+                fields.land(game, player, [])
+                self.assertEqual(game["pending"]["type"], "card")
+                run(main.leave_game(game["code"], PlayerRef(player_id=player["id"])))
+                if game["status"] == "playing":
+                    self.assertEqual(len(game["deck"]) + len(game["discard"]), 40)
+
+    def test_leaving_at_the_fortune_teller_keeps_all_40_cards(self):
+        game, _ = new_game(3)
+        player = current(game)
+        put(player, field_id("kartya"))
+        game["deck"].remove("E08")
+        game["deck"].insert(0, "E08")
+        fields.land(game, player, [])
+        play.choose(game, player, "ok")
+        self.assertEqual(game["pending"]["type"], "card_pick")
+        run(main.leave_game(game["code"], PlayerRef(player_id=player["id"])))
+        self.assertEqual(len(game["deck"]) + len(game["discard"]), 40)
+
+    def test_swap_takes_the_other_player_out_of_school(self):
+        game, _ = new_game(2)
+        player, other = game["players"]
+        card_field = field_id("kartya")
+        put(other, card_field - 1)
+        other["in_school"] = True
+        put(player, card_field)
+        cards.EFFECTS["H06"](game, player)  # Átpártolás
+        self.assertEqual(other["position"], card_field)
+        self.assertFalse(other["in_school"], "aki elkerült az oktatás mezőjéről, az már nincs oktatáson")
+
+    def test_no_shop_discount_when_a_card_moves_onto_the_field(self):
+        shops = {f["id"] for f in BOARD if f["type"] == "vasarlas"}
+        start = next(f["id"] for f in BOARD if f["type"] == "kartya" and (f["id"] + 4) % FIELD_COUNT in shops)
+        game, _ = new_game(2)
+        player = current(game)
+        put(player, start)
+        cards.EFFECTS["E07"](game, player)  # Turisztikai vonzás: +4 mező
+        play.after_card(game, player, "finish")
+        self.assertIn(player["position"], shops)
+        self.assertEqual(game["pending"]["discount"], 0, "a kártyával elért mező hatása nem érvényesül")
+
+    def test_shop_discount_ends_with_the_turn(self):
+        game, player = new_game(2)[0], None
+        player = current(game)
+        put(player, field_id("vasarlas"))
+        fields.land(game, player, [])
+        play.choose_building(game, player, {"discount": RULES["shop_discount"]}, "no")
+        self.assertIsNone(game["shop_discount"])
+
+    def test_last_player_left_wins(self):
+        game, ids = new_game(3)
+        for pid in ids[1:]:
+            run(main.leave_game(game["code"], PlayerRef(player_id=pid)))
+        self.assertEqual(game["status"], "finished")
+        self.assertEqual(game["winner_id"], ids[0])
+        self.assertEqual(game["end_reason"], "left")
+
+    def test_two_players_left_keep_playing(self):
+        game, ids = new_game(3)
+        run(main.leave_game(game["code"], PlayerRef(player_id=ids[2])))
+        self.assertEqual(game["status"], "playing")
 
 
 if __name__ == "__main__":
