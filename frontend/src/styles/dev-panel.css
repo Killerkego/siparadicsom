@@ -1,0 +1,59 @@
+/* fejlesztői fül: bal alul lenyitható */
+.dev-panel {
+  position: absolute;
+  bottom: 16px;
+  left: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 230px;
+  box-sizing: border-box;
+  padding: 8px 10px;
+  background: rgba(255, 248, 225, 0.92);
+  border: 1px dashed #c99a2e;
+  border-radius: 12px;
+  box-shadow: 0 6px 24px rgba(31, 42, 51, 0.18);
+  font-size: 13px;
+  user-select: none;
+}
+
+.dev-panel .dev-toggle {
+  padding: 0;
+  border: none;
+  background: none;
+  color: #7a5a12;
+  font: inherit;
+  font-weight: 800;
+  text-align: left;
+  cursor: pointer;
+}
+
+.dev-panel select,
+.dev-panel button.dev-action {
+  padding: 6px 8px;
+  border-radius: 8px;
+  font: inherit;
+}
+
+.dev-panel select {
+  border: 1px solid #d8c48f;
+  background: #fff;
+}
+
+.dev-panel button.dev-action {
+  border: none;
+  background: #b7862a;
+  color: #fff;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.dev-panel button.dev-action:disabled {
+  background: #cdbf9f;
+  cursor: default;
+}
+
+.dev-panel .hint {
+  color: #8a7a55;
+  font-size: 12px;
+}

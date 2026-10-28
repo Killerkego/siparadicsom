@@ -1,0 +1,185 @@
+/* játékoskártyák a bal felső sarokban: a tábla fenyőfa keretét idézik */
+.player-cards {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 190px;
+  max-height: calc(100% - 24px);
+  padding: 2px 6px 6px 0; /* hely az árnyéknak és a soron következő kártya kitolásának */
+  overflow: hidden auto;
+  user-select: none;
+}
+
+.player-card {
+  position: relative;
+  overflow: hidden;
+  padding: 9px 9px 11px;
+  border-radius: 11px;
+  background: #fffaf1;
+  box-shadow: 0 4px 14px rgba(31, 42, 51, 0.16), inset 0 0 0 1px #e8d6b8;
+  font-size: 11.5px;
+  transition: transform 0.25s, box-shadow 0.25s;
+}
+
+/* fenyőfa léc aranyvonallal a tetején, alatta a játékos színe */
+.player-card::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto;
+  height: 5px;
+  background: url('/textures/fenyo.png') center / 180px auto, #d9b07c;
+  box-shadow: 0 1px 0 #d2b06a, 0 3px 0 var(--player);
+}
+
+/* festett rombuszlánc az alján, mint a keret felső síkján */
+.player-card::after {
+  content: '';
+  position: absolute;
+  inset: auto 9px 4px;
+  height: 4px;
+  background:
+    linear-gradient(45deg, transparent 35%, #5b8a6a 35% 65%, transparent 65%) 0 0 / 12px 4px,
+    linear-gradient(45deg, transparent 35%, #b5574f 35% 65%, transparent 65%) 6px 0 / 12px 4px;
+  background-repeat: repeat-x;
+  opacity: 0.75;
+}
+
+.player-card.turn {
+  transform: translateX(3px);
+  box-shadow: 0 4px 16px rgba(31, 42, 51, 0.2), inset 0 0 0 2px var(--player);
+}
+
+.player-card-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+/* a bábu portréja kerek „érmében”: fenyőkeret, arany- és játékosszín-gyűrű */
+.portrait {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 35%, #ffffff, #e6eef5 70%);
+  box-shadow: 0 0 0 1.5px #d2b06a, 0 0 0 3.5px var(--player), 0 0 0 5px #b98a5e, 0 2px 5px rgba(31, 42, 51, 0.25);
+  overflow: hidden;
+}
+
+.portrait img {
+  width: 116%;
+  height: 116%;
+  object-fit: contain;
+  transform: translateY(4%);
+}
+
+.portrait span {
+  font-size: 20px;
+}
+
+.player-card .who {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.2;
+}
+
+.player-card .who b {
+  overflow: hidden;
+  padding-right: 52px; /* a „Következik” jelvény helye */
+  color: #2b4a63;
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.player-card .who .me {
+  color: #7a8a97;
+  font-weight: 600;
+}
+
+.player-card .where {
+  overflow: hidden;
+  color: #7a8a97;
+  font-size: 10.5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.player-card .badge {
+  position: absolute;
+  top: 10px;
+  right: 8px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--player);
+  color: #fff;
+  font-size: 9.5px;
+  font-weight: 800;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.25);
+}
+
+.player-card .stats {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 1px 8px;
+  margin: 6px 0 5px;
+  padding-top: 5px;
+  border-top: 1px dashed #e2cfae;
+}
+
+.player-card .stats dt {
+  color: #7a8a97;
+}
+
+.player-card .stats dd {
+  margin: 0;
+  color: #1f2a33;
+  font-weight: 800;
+  text-align: right;
+}
+
+.player-card .stats dd.debt {
+  color: #b5574f;
+}
+
+.player-card .stats dd.none {
+  color: #9aa7b2;
+  font-weight: 600;
+}
+
+/* építkezés: 8 kis tégla (a megépültek aranyosak) és mellette az állás */
+.build-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.build-row b {
+  color: #1f2a33;
+  font-size: 11px;
+}
+
+.build-pips {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 2px;
+}
+
+.build-pips .pip {
+  height: 5px;
+  border-radius: 2px;
+  background: #e6ddd0;
+}
+
+.build-pips .pip.done {
+  background: linear-gradient(#e2c27a, #c9905a);
+  box-shadow: 0 0 0 1px rgba(150, 100, 50, 0.2);
+}

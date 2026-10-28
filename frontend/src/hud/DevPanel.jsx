@@ -1,10 +1,5 @@
 import { useState } from 'react';
-import { FIELD_TYPES, SPECIAL_TYPES } from '../board/fieldTypes';
-import boardData from '../data/board.json';
-
-const fields = boardData.fields;
-
-const fieldLabel = (f) => `#${f.id} ${FIELD_TYPES[f.type].label}${f.special ? ` – ${SPECIAL_TYPES[f.special]}` : ''}`;
+import { fieldName, fields } from '../game/format';
 
 // Fejlesztői fül (csak ha a backendben DEV_MODE = True): dobás helyett bármelyik mezőre lépés,
 // és az összes építési elem ingyen
@@ -23,7 +18,7 @@ export default function DevPanel({ game, me, canMove, busy, onMove, onBuildAll }
           <select value={field} onChange={(e) => setField(Number(e.target.value))}>
             {fields.map((f) => (
               <option key={f.id} value={f.id}>
-                {fieldLabel(f)}
+                {fieldName(f)}
               </option>
             ))}
           </select>

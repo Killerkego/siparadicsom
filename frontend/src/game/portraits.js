@@ -46,16 +46,18 @@ function render() {
   });
 }
 
-// a figurák portréi (data URL-ek) a FIGURES sorrendjében; amíg készülnek, üres tömb
-export function usePortraits() {
+// a figurák portréi (data URL-ek) a FIGURES sorrendjében; amíg készülnek, üres tömb.
+// enabled: csak akkor kezdjük el, ha a 3D jelenet már kész (különben a betöltést lassítaná)
+export function usePortraits(enabled = true) {
   const [urls, setUrls] = useState([]);
   useEffect(() => {
+    if (!enabled) return;
     let alive = true;
     portraits ??= render();
     portraits.then((u) => alive && setUrls(u)).catch(() => {});
     return () => {
       alive = false;
     };
-  }, []);
+  }, [enabled]);
   return urls;
 }

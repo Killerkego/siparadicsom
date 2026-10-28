@@ -1,13 +1,12 @@
-import { FIGURES } from './figures';
-import { usePortraits } from './portraits';
-
-const hk = (n) => `${n.toLocaleString('hu-HU')} HK`;
+import { FIGURES } from '../game/figures';
+import { hk } from '../game/format';
+import { usePortraits } from '../game/portraits';
 
 // Játékoskártyák a bal felső sarokban: bábu portréja, egyenleg, hitel és az építkezés állása.
 // A kártya a tábla keretét idézi: fenyőfa csík, aranyvonal, alul festett rombuszlánc.
 // `players`: a mozgás végén frissülő (settled) állapot, hogy a pénz ne változzon előre.
-export default function PlayerCards({ players, buildings, turnPlayerId, playerId, fieldLabel }) {
-  const portraits = usePortraits();
+export default function PlayerCards({ players, buildings, turnPlayerId, playerId, fieldLabel, ready }) {
+  const portraits = usePortraits(ready);
   return (
     <div className="player-cards">
       {players.map((p) => {

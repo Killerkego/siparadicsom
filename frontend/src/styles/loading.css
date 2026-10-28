@@ -1,0 +1,246 @@
+/* töltőképernyő: a kezdőlap alpesi képe hóeséssel, középen arany felirat és a domboldalon csúszó síelő */
+.loading-screen {
+  position: absolute;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  /* amíg a kép megérkezik: téli alkonyat színátmenete, nem szürke */
+  background: linear-gradient(180deg, #2f4560 0%, #6f86a3 45%, #d9c9bb 78%, #f3ece6 100%);
+  transition: opacity 0.7s ease;
+}
+
+.loading-screen.leaving {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.loading-landscape {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 54%;
+  transform-origin: 50% 45%;
+  opacity: 0;
+  transition: opacity 0.8s ease;
+  animation: home-drift 40s ease-in-out infinite alternate;
+}
+
+.loading-landscape.loaded {
+  opacity: 1;
+}
+
+.loading-screen::after {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: radial-gradient(ellipse at center, rgba(20, 24, 27, 0.15), rgba(20, 24, 27, 0.55));
+  content: '';
+  pointer-events: none;
+}
+
+/* CSS-hóesés két rétegben (távoli apró, közeli nagyobb pelyhek); csak transform-ot animál, ezért
+   a böngésző külön szálon mozgatja, és akkor sem áll meg, ha a 3D betöltése épp lefogja az oldalt */
+.loading-snow {
+  position: absolute;
+  inset: -300px 0 0;
+  z-index: 2;
+  pointer-events: none;
+  will-change: transform;
+}
+
+.loading-snow.far {
+  background-image:
+    radial-gradient(1.5px 1.5px at 20px 40px, rgba(255, 255, 255, 0.7), transparent),
+    radial-gradient(1.2px 1.2px at 120px 90px, rgba(255, 255, 255, 0.6), transparent),
+    radial-gradient(1.6px 1.6px at 210px 160px, rgba(255, 255, 255, 0.65), transparent),
+    radial-gradient(1.3px 1.3px at 70px 230px, rgba(255, 255, 255, 0.55), transparent),
+    radial-gradient(1.5px 1.5px at 260px 270px, rgba(255, 255, 255, 0.6), transparent);
+  background-size: 300px 300px;
+  animation: loading-snowfall 16s linear infinite;
+}
+
+.loading-snow.near {
+  background-image:
+    radial-gradient(3px 3px at 50px 60px, rgba(255, 255, 255, 0.9), transparent),
+    radial-gradient(2.5px 2.5px at 230px 130px, rgba(255, 255, 255, 0.85), transparent),
+    radial-gradient(3.2px 3.2px at 140px 250px, rgba(255, 255, 255, 0.9), transparent),
+    radial-gradient(2.6px 2.6px at 280px 20px, rgba(255, 255, 255, 0.8), transparent);
+  background-size: 300px 300px;
+  animation: loading-snowfall-near 9s linear infinite;
+}
+
+@keyframes loading-snowfall {
+  to {
+    transform: translate3d(40px, 300px, 0);
+  }
+}
+
+@keyframes loading-snowfall-near {
+  to {
+    transform: translate3d(-60px, 300px, 0);
+  }
+}
+
+.loading-card {
+  position: relative;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: min(440px, calc(100% - 32px));
+  padding: 26px 30px 22px;
+  border: 1px solid rgba(226, 196, 137, 0.72);
+  border-radius: 16px;
+  background: rgba(31, 35, 38, 0.55);
+  box-shadow: 0 18px 44px rgba(20, 23, 24, 0.3);
+  color: #fffaf0;
+  text-align: center;
+  backdrop-filter: blur(8px);
+  animation: home-slide-in 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+.loading-eyebrow {
+  margin: 0;
+  color: #f0dfbb;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 2.6px;
+}
+
+.loading-eyebrow span {
+  color: #c19b58;
+}
+
+/* arany kézírásos cím csillanással, mint a kezdőlapon */
+.loading-card h1 {
+  margin: 8px 0 -0.35em;
+  padding: 0 0.3em 0.35em 0.2em;
+  background: linear-gradient(110deg, #e7c783 42%, #fff4d6 50%, #e7c783 58%) 100% 0 / 260% 100% no-repeat;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  font-family: 'Parisienne', 'Cormorant Garamond', cursive;
+  font-size: clamp(48px, 7vw, 68px);
+  font-weight: 400;
+  line-height: 1.1;
+  filter: drop-shadow(0 3px 8px rgba(0, 0, 0, 0.3));
+  animation: home-shimmer 4s 0.6s ease-in-out infinite;
+}
+
+.loading-step {
+  min-height: 20px;
+  margin: 10px 0 2px;
+  color: rgba(255, 250, 240, 0.92);
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 18px;
+  font-style: italic;
+}
+
+/* havas domb fenyőkkel, arany nyomvonal és a síelő */
+.loading-slope {
+  position: relative;
+  width: 100%;
+  margin-top: 4px;
+}
+
+.loading-slope svg {
+  display: block;
+  width: 100%;
+  overflow: visible;
+}
+
+.loading-slope .hill {
+  fill: rgba(250, 252, 255, 0.92);
+}
+
+.loading-slope .track {
+  fill: none;
+  stroke: rgba(193, 155, 88, 0.35);
+  stroke-width: 2;
+  stroke-dasharray: 3 5;
+}
+
+.loading-slope .trail {
+  fill: none;
+  stroke: #e2c27a;
+  stroke-width: 3;
+  stroke-linecap: round;
+}
+
+.loading-slope .pine path {
+  fill: #4a8063;
+}
+
+/* a síelő: a helyét és a dőlését a haladás adja, a kanyargást CSS-animáció (folyamatosan mozog) */
+.loading-skier {
+  position: absolute;
+  width: 0;
+  height: 0;
+  transform-origin: 0 0;
+}
+
+.loading-skier span {
+  position: absolute;
+  left: -14px;
+  bottom: -2px;
+  font-size: 24px;
+  line-height: 1;
+  filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.35));
+  /* az emoji balra néz: tükrözve a lejtő irányába (jobbra, lefelé) csúszik */
+  transform: scaleX(-1);
+  animation: loading-carve 0.9s ease-in-out infinite alternate;
+  will-change: transform;
+}
+
+@keyframes loading-carve {
+  from {
+    transform: scaleX(-1) translate(2px, 0) rotate(-6deg);
+  }
+  to {
+    transform: scaleX(-1) translate(-3px, -3px) rotate(7deg);
+  }
+}
+
+.loading-percent {
+  margin-top: 6px;
+  color: #e7c783;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 26px;
+  font-weight: 600;
+  letter-spacing: 1px;
+}
+
+.loading-tip {
+  min-height: 36px;
+  margin: 8px 0 0;
+  color: rgba(255, 250, 240, 0.85);
+  font-size: 13px;
+  line-height: 1.4;
+  animation: loading-tip-in 0.6s ease both;
+}
+
+.loading-tip b {
+  color: #f0dfbb;
+}
+
+@keyframes loading-tip-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loading-landscape,
+  .loading-snow,
+  .loading-skier span,
+  .loading-card,
+  .loading-card h1,
+  .loading-tip {
+    animation: none;
+  }
+}

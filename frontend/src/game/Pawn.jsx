@@ -13,7 +13,7 @@ const SCALE = 0.65; // kisebb bábuk, hogy négyen is elférjenek egy mezőn
 
 // Figurás bábuk fatalpon (Blender: babuk.py). A figurát a játékos a lobbiban választja;
 // a talp színes csíkja ('Babu_jelolo') a játékos színe.
-const MODEL_URL = '/models/babuk.glb';
+export const MODEL_URL = '/models/babuk.glb';
 
 // Minden játékosnak saját helye van a mezőn belül (mező szerinti x, z), így nem fedik egymást.
 const SLOTS = [[-0.23, -0.45], [0.23, -0.45], [-0.23, 0.05], [0.23, 0.05]];

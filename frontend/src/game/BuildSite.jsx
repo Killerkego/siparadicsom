@@ -7,7 +7,7 @@ import * as THREE from 'three';
 // (ott áll a kocka), rajta a 8 épület. A megépült elem teljes színben áll, a megvehető halvány aranyos
 // „szellem”, a zárolt (hiányzó előfeltétel) alig látszik. Az egész a kamera felé fordul.
 // (Blender: buildings.py, diorama.py – a terep ösvényei ezekhez a helyekhez vezetnek)
-const MODEL_URL = '/models/epuletek.glb';
+export const MODEL_URL = '/models/epuletek.glb';
 const GROUND_TOP = 0.05; // a terep felső síkja
 const GROW_TIME = 900; // ms, ennyi idő alatt „nő ki” az új épület
 const SIZE = 2.6; // a Blenderben kb. 1.1 széles épületek nagyítása (így kb. 2.9 szélesek)
