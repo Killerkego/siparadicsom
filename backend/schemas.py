@@ -11,6 +11,10 @@ class PlayerIn(BaseModel):
     name: PlayerName
 
 
+class CreateIn(PlayerIn):
+    public: bool = False  # nyilvános lobbi: a lobbik oldalán listázzuk; privátba csak a kóddal lehet belépni
+
+
 class PlayerRef(BaseModel):
     player_id: str
 
@@ -18,6 +22,11 @@ class PlayerRef(BaseModel):
 class ChoiceIn(BaseModel):
     player_id: str
     choice: str
+
+
+class VisibilityIn(BaseModel):
+    player_id: str
+    public: bool
 
 
 class FigureIn(BaseModel):

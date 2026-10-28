@@ -70,12 +70,14 @@ def new_effects() -> dict:
     }
 
 
-def new_game(host: dict) -> dict:
+def new_game(host: dict, public: bool = False) -> dict:
     """Új játék a lobbiban, a házigazdával; elmenti a többi közé."""
     code = new_code()
     games[code] = {
         "code": code,
         "status": "lobby",  # lobby -> playing -> finished
+        "public": public,  # nyilvános: a lobbik listájából is be lehet lépni; privát: csak a kóddal
+        "created_at": now_ms(),
         "host_id": host["id"],
         "players": [host],
         "turn": 0,  # a soron következő játékos sorszáma
@@ -108,6 +110,7 @@ def public_state(game: dict) -> dict:
     return {
         "code": game["code"],
         "status": game["status"],
+        "public": game["public"],
         "host_id": game["host_id"],
         "players": players,
         "turn_player_id": players[game["turn"]]["id"] if game["status"] == "playing" else None,
@@ -128,6 +131,21 @@ def public_state(game: dict) -> dict:
         "max_players": MAX_PLAYERS,
         "dev_mode": DEV_MODE,
     }
+
+
+def public_lobbies() -> list[dict]:
+    """A lobbik oldalának listája: a még el nem indult nyilvános játékok, a legújabb elöl."""
+    lobbies = [g for g in games.values() if g["public"] and g["status"] == "lobby"]
+    lobbies.sort(key=lambda g: g["created_at"], reverse=True)
+    return [
+        {
+            "code": g["code"],
+            "host": find_player(g, g["host_id"])["name"],
+            "players": len(g["players"]),
+            "max_players": MAX_PLAYERS,
+        }
+        for g in lobbies
+    ]
 
 
 async def broadcast(game: dict) -> None:

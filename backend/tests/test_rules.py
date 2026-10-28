@@ -17,7 +17,7 @@ import play
 from config import BOARD, BUILDING_BY_ID, BUILDINGS, FIELD_COUNT, MAX_PLAYERS, RULES
 from stories import FIELD_STORIES
 from deck import CARDS
-from schemas import FigureIn, PlayerIn, PlayerRef
+from schemas import FigureIn, PlayerIn, PlayerRef, VisibilityIn
 
 
 def roll(game, player, value):
@@ -84,6 +84,39 @@ class StartTests(unittest.TestCase):
         game, _ = new_lobby(2)
         with self.assertRaises(HTTPException):
             run(main.join_game(game["code"], PlayerIn(name="játékos 2")))
+
+
+class LobbyListTests(unittest.TestCase):
+    """Nyilvános és privát lobbik: a listában csak a várakozó nyilvános játékok szerepelnek."""
+
+    def listed(self):
+        return {lobby["code"] for lobby in run(main.list_games())["lobbies"]}
+
+    def test_public_lobby_is_listed_private_is_not(self):
+        public, _ = new_lobby(2, public=True)
+        private, _ = new_lobby(1)
+        self.assertIn(public["code"], self.listed())
+        self.assertNotIn(private["code"], self.listed(), "privátba csak kóddal lehet belépni")
+        lobby = next(x for x in run(main.list_games())["lobbies"] if x["code"] == public["code"])
+        self.assertEqual((lobby["host"], lobby["players"], lobby["max_players"]), ("Játékos 1", 2, MAX_PLAYERS))
+
+    def test_private_lobby_can_be_joined_with_code(self):
+        game, _ = new_lobby(1)
+        run(main.join_game(game["code"], PlayerIn(name="Kóddal")))
+        self.assertEqual(len(game["players"]), 2)
+
+    def test_started_game_is_not_listed(self):
+        game, ids = new_lobby(2, public=True)
+        run(main.start_game(game["code"], PlayerRef(player_id=ids[0])))
+        self.assertNotIn(game["code"], self.listed())
+
+    def test_only_host_can_change_visibility(self):
+        game, ids = new_lobby(2)
+        with self.assertRaises(HTTPException) as err:
+            run(main.set_visibility(game["code"], VisibilityIn(player_id=ids[1], public=True)))
+        self.assertEqual(err.exception.status_code, 403)
+        run(main.set_visibility(game["code"], VisibilityIn(player_id=ids[0], public=True)))
+        self.assertIn(game["code"], self.listed())
 
 
 class FigureTests(unittest.TestCase):

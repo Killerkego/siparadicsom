@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import FigurePreview from '../game/FigurePreview';
 import { FIGURES } from '../game/figures';
+import VisibilityToggle, { VisibilityIcon } from './VisibilityToggle';
 
 // Lobbi: itt várnak a játékosok, amíg a házigazda el nem indítja a játékot
-export default function LobbyScreen({ game, playerId, onPickFigure, onStart, onLeave }) {
+export default function LobbyScreen({ game, playerId, onSetPublic, onPickFigure, onStart, onLeave }) {
   const [error, setError] = useState('');
   const [preview, setPreview] = useState(null); // melyik figura látszik nagyban (sorszám)
   const [copied, setCopied] = useState(false);
@@ -57,7 +58,19 @@ export default function LobbyScreen({ game, playerId, onPickFigure, onStart, onL
             {copied ? '✔ Kimásolva' : 'Kód másolása'}
           </button>
         </div>
-        <p className="hint">Ezt a kódot add meg a többi játékosnak, hogy csatlakozni tudjanak.</p>
+        {isHost ? (
+          <VisibilityToggle value={game.public} onChange={(value) => run(() => onSetPublic(value))} />
+        ) : (
+          <p className="lobby-visibility">
+            <VisibilityIcon isPublic={game.public} />{' '}
+            {game.public ? 'Nyitott társaság: a listában is látszik.' : 'Zártkörű társaság: csak meghívókóddal lehet csatlakozni.'}
+          </p>
+        )}
+        <p className="hint">
+          {game.public
+            ? 'A többiek a társaságok listájából vagy ezzel a kóddal csatlakozhatnak.'
+            : 'Ezt a meghívókódot add meg a többi játékosnak, hogy csatlakozni tudjanak.'}
+        </p>
 
         <h2 className="players-title">
           Játékosok

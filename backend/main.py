@@ -10,7 +10,7 @@ from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 
 import play
 from config import DEV_MODE, FIGURE_COUNT, MAX_PLAYERS, MIN_PLAYERS
-from schemas import ChoiceIn, DevMoveIn, FigureIn, PlayerIn, PlayerRef
+from schemas import ChoiceIn, CreateIn, DevMoveIn, FigureIn, PlayerIn, PlayerRef, VisibilityIn
 from store import (
     broadcast,
     connections,
@@ -20,6 +20,7 @@ from store import (
     joined_response,
     new_game,
     new_player,
+    public_lobbies,
     public_state,
 )
 from turns import acting_player
@@ -36,10 +37,28 @@ async def updated(game: dict) -> dict:
 # --- lobbi ---
 
 
+@app.get("/api/games")
+async def list_games():
+    """A nyilvános, még várakozó lobbik a lobbik oldalára; a privátak nem szerepelnek benne."""
+    return {"lobbies": public_lobbies()}
+
+
 @app.post("/api/games")
-async def create_game(body: PlayerIn):
+async def create_game(body: CreateIn):
     player = new_player(None, body.name)
-    return joined_response(new_game(player), player)
+    return joined_response(new_game(player, body.public), player)
+
+
+@app.post("/api/games/{code}/visibility")
+async def set_visibility(code: str, body: VisibilityIn):
+    """A házigazda a lobbiban átállíthatja: nyilvános vagy privát."""
+    game = get_game(code)
+    if body.player_id != game["host_id"]:
+        raise HTTPException(403, "Csak a házigazda állíthatja át.")
+    if game["status"] != "lobby":
+        raise HTTPException(409, "A játék már elindult.")
+    game["public"] = body.public
+    return await updated(game)
 
 
 @app.post("/api/games/{code}/join")

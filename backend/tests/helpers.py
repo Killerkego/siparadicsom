@@ -11,7 +11,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import main  # noqa: E402
 from config import BOARD  # noqa: E402
-from schemas import PlayerIn, PlayerRef  # noqa: E402
+from schemas import CreateIn, PlayerIn, PlayerRef  # noqa: E402
 from store import games  # noqa: E402
 
 # minden modul, amelyik kockát dob (a saját névterébe importálja a dice-t)
@@ -22,9 +22,9 @@ def run(coro):
     return asyncio.run(coro)
 
 
-def new_lobby(count: int):
+def new_lobby(count: int, public: bool = False):
     """Lobbi `count` játékossal; visszaadja a játékot és a játékosok azonosítóit sorrendben."""
-    created = run(main.create_game(PlayerIn(name="Játékos 1")))
+    created = run(main.create_game(CreateIn(name="Játékos 1", public=public)))
     code = created["game"]["code"]
     ids = [created["player_id"]]
     for i in range(2, count + 1):

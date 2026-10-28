@@ -247,13 +247,10 @@
 }
 
 .home-brand {
-  display: flex;
-  align-items: center;
-  gap: 18px;
   width: fit-content;
   max-width: 100%;
   box-sizing: border-box;
-  padding: 18px 24px 20px 18px;
+  padding: 18px 24px 20px;
   border: 1px solid rgba(226, 196, 137, 0.72);
   border-radius: 12px;
   background: rgba(31, 35, 38, 0.53);
@@ -280,11 +277,36 @@
 }
 
 /* az Aranyhegy Szálló logója a cím mellett */
+/* az Aranyhegy Szálló logója a jobb oldali űrlap tetején, középen, két oldalt halványuló arany
+   vonallal (mint a kártya hátlapján a díszítés); alatta az üdvözlés is középre igazodik */
+.home-crest {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.home-crest::before,
+.home-crest::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(193, 155, 88, 0), #c19b58);
+}
+
+.home-crest::after {
+  background: linear-gradient(90deg, #c19b58, rgba(193, 155, 88, 0));
+}
+
 .home-logo {
-  flex: none;
-  width: clamp(76px, 8vw, 104px);
+  display: block;
+  width: 96px;
   height: auto;
-  filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.35));
+  filter: drop-shadow(0 8px 16px rgba(97, 77, 43, 0.3));
+}
+
+.home-card .home-form-heading {
+  text-align: center;
 }
 
 .home-brand h1 {
@@ -510,6 +532,232 @@
 .home-card .divider::before,
 .home-card .divider::after {
   border-color: #eee6d9;
+}
+
+/* nyilvános / privát kapcsoló (kezdőlap és lobbi) */
+.visibility {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.visibility-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid #e9dfce;
+  border-radius: 11px;
+  background: #f5efe4;
+}
+
+.visibility-options button {
+  padding: 8px 10px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: #806334;
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 160ms ease, box-shadow 160ms ease;
+}
+
+.visibility-options button:not(.active):not(:disabled):hover {
+  background: #eee3d1;
+}
+
+.visibility-options button.active {
+  background: #fffdf9;
+  box-shadow: 0 2px 8px rgba(153, 114, 51, 0.18), inset 0 0 0 1px #d9c6a2;
+  color: #6f5228;
+  cursor: default;
+}
+
+/* nyitott (felvonókabin) és zártkörű (szobakulcs) társaság vonalas ikonja */
+.visibility-icon {
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vertical-align: -4px;
+}
+
+.visibility-options button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+}
+
+.visibility-options button .visibility-icon {
+  color: #b08a4a;
+}
+
+.visibility-options button.active .visibility-icon {
+  color: #9b7537;
+}
+
+.public-lobby-name .visibility-icon {
+  margin-right: 4px;
+  color: #b08a4a;
+}
+
+.lobby-visibility .visibility-icon {
+  margin-right: 2px;
+}
+
+.visibility-hint {
+  margin: 0;
+  color: #8d8578;
+  font-size: 12.5px;
+}
+
+/* nyilvános lobbik listája a kezdőlapon */
+.public-lobbies {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.public-lobbies-title .count {
+  margin-left: 6px;
+  padding: 1px 9px;
+  border-radius: 999px;
+  background: #f3ead9;
+  color: #806334;
+  font-family: Nunito, system-ui, sans-serif;
+  font-size: 13px;
+  font-weight: 800;
+  vertical-align: middle;
+}
+
+.public-lobbies-empty {
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px dashed #e2d5bd;
+  border-radius: 9px;
+  color: #9c9486;
+  font-size: 13px;
+  text-align: center;
+}
+
+.public-lobbies ul {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 168px;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.public-lobbies li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 7px 7px 12px;
+  border: 1px solid #eee6d9;
+  border-radius: 9px;
+  background: #fdfbf7;
+}
+
+.public-lobby-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  color: #514633;
+  font-size: 14px;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.public-lobby-count {
+  color: #8d8578;
+  font-size: 12.5px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.public-lobbies .btn {
+  padding: 7px 14px;
+  font-size: 13px;
+}
+
+/* a lobbik oldala: a kezdőlap után, három részre tagolva (új lobbi, nyilvános lista, kóddal) */
+.lobby-browser {
+  max-width: 460px;
+}
+
+.lobby-browser-name {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 4px 10px;
+  margin: 0;
+  color: #8d8578;
+  font-size: 14px;
+}
+
+.lobby-browser-name b {
+  color: #514633;
+}
+
+.link-button {
+  padding: 0;
+  border: none;
+  background: none;
+  color: #a17b3d;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.link-button:disabled {
+  color: #c9bfae;
+  cursor: default;
+}
+
+.lobby-browser-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 14px;
+  border-top: 1px solid #eee6d9;
+}
+
+.lobby-browser-section h2 {
+  margin: 0;
+}
+
+.lobby-browser .join .code-input {
+  letter-spacing: 3px;
+}
+
+.home-name-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.lobby-visibility {
+  margin: 0;
+  padding: 8px 12px;
+  border-radius: 9px;
+  background: #f5efe4;
+  color: #806334;
+  font-size: 13.5px;
+  font-weight: 700;
+  text-align: center;
 }
 
 .home-join {
