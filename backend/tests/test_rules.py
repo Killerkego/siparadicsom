@@ -457,10 +457,13 @@ class CardTests(unittest.TestCase):
         game["players"][1]["buildings"] = ["palya", "szalloda"]
         player = current(game)
         put(player, field_id("kartya"))
-        game["deck"].remove(card_id)
-        game["deck"].insert(0, card_id)
+        # Jósnő: utána két ismert, pénzt adó lap jön, különben véletlen lenne, melyiket választja, és pl. az
+        # Üres felvonó (újradobás) semmit nem változtatna az állapoton
+        for cid in ([card_id, "N01", "N02"] if card_id == "E08" else [card_id])[::-1]:
+            game["deck"].remove(cid)
+            game["deck"].insert(0, cid)
         before = snapshot(game)
-        with dice_rolls(1, 1, 1, 1):  # a Rulett dob (a Jósnő két lapja között is lehet)
+        with dice_rolls(1, 1, 1, 1):  # a Rulett dob
             fields.land(game, player, [])
             self.assertEqual(game["pending"]["card"], card_id)
             play.choose(game, player, "ok")
