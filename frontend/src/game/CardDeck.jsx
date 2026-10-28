@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { Html } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
@@ -25,6 +26,9 @@ const PICK_SCALE = 3.3;
 const PICK_DX = 1.25; // a lapok középvonala a középtől oldalra
 const PICK_DELAY = 400; // ms, előbb a Jósnő lapja tűnik el
 const PICK_STAGGER = 180; // ms, a jobb oldali lap ennyivel később indul
+// a választó gomb a lap alsó szélénél (a lap saját koordinátáiban: az előlap a -y, az alja a -z felé
+// néz), így a lappal együtt mozog és méreteződik
+const PICK_BUTTON = [0, -T, -H / 2];
 
 const smooth = (x) => x * x * (3 - 2 * x);
 const clamp01 = (x) => Math.min(1, Math.max(0, x));
@@ -59,10 +63,12 @@ function CardFaces({ back, front }) {
 }
 
 // Jósnő egyik lapja: a pakli tetejéről a kamera elé repül a helyére (side: -1 bal, 1 jobb), ott lebeg;
-// a választó játékos rákattintva választ. leave: a választás ideje, chosen: ezt a lapot választotta.
+// a választó játékos a lap alatti gombbal (vagy a lapra kattintva) választ.
+// leave: a választás ideje, chosen: ezt a lapot választotta.
 function PickCard({ id, side, start, leave, chosen, geometry, top, onPick }) {
   const ref = useRef();
   const [hovered, setHovered] = useState(false);
+  const [arrived, setArrived] = useState(false); // a lap a helyére ért: jöhet alá a gomb
   const materials = useMemo(() => {
     const face = (map) => new THREE.MeshBasicMaterial({ map, transparent: true, toneMapped: false });
     return {
@@ -85,6 +91,7 @@ function PickCard({ id, side, start, leave, chosen, geometry, top, onPick }) {
     if (!c.visible) return;
     const lift = smooth(clamp01(t / 0.3));
     const fly = smooth(clamp01((t - 0.3) / 0.7));
+    if (fly === 1 && !arrived) setArrived(true);
     const from = new THREE.Vector3(DECK.x + top.dx, top.y + T + 0.35 * lift, DECK.z);
     c.position.lerpVectors(from, target, fly);
     c.position.y +=
@@ -99,26 +106,42 @@ function PickCard({ id, side, start, leave, chosen, geometry, top, onPick }) {
 
   const clickable = onPick && !leave;
   return (
-    <group
-      ref={ref}
-      visible={false}
-      onClick={(e) => {
-        if (!clickable || !ref.current.visible) return;
-        e.stopPropagation();
-        onPick(id);
-      }}
-      onPointerOver={() => {
-        setHovered(true);
-        if (clickable) document.body.style.cursor = 'pointer';
-      }}
-      onPointerOut={() => {
-        setHovered(false);
-        document.body.style.cursor = 'auto';
-      }}
-    >
-      <mesh geometry={geometry} material={materials.edge} castShadow />
-      <CardFaces back={materials.back} front={materials.front} />
-    </group>
+    <>
+      <group
+        ref={ref}
+        visible={false}
+        onClick={(e) => {
+          if (!clickable || !ref.current.visible) return;
+          e.stopPropagation();
+          onPick(id);
+        }}
+        onPointerOver={() => {
+          setHovered(true);
+          if (clickable) document.body.style.cursor = 'pointer';
+        }}
+        onPointerOut={() => {
+          setHovered(false);
+          document.body.style.cursor = 'auto';
+        }}
+      >
+        <mesh geometry={geometry} material={materials.edge} castShadow />
+        <CardFaces back={materials.back} front={materials.front} />
+        {clickable && arrived && (
+          <Html position={PICK_BUTTON} zIndexRange={[12, 10]}>
+            <div className="pick-card-anchor">
+              <button
+                className={hovered ? 'pick-card-button hovered' : 'pick-card-button'}
+                onClick={() => onPick(id)}
+                onPointerEnter={() => setHovered(true)}
+                onPointerLeave={() => setHovered(false)}
+              >
+                Ezt választom
+              </button>
+            </div>
+          </Html>
+        )}
+      </group>
+    </>
   );
 }
 

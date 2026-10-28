@@ -1,6 +1,5 @@
 import BuildDecision from './BuildDecision';
 import CardDecision from './CardDecision';
-import CardPickDecision from './CardPickDecision';
 import GambleDecision from './GambleDecision';
 import LiftDecision from './LiftDecision';
 import TrapDecision from './TrapDecision';
@@ -11,13 +10,13 @@ export const DECISION_NAMES = { gamble: 'Gambling', lift: 'Felvonó', trap: 'Csa
 const DECISIONS = {
   build: BuildDecision,
   card: CardDecision,
-  card_pick: CardPickDecision,
   gamble: GambleDecision,
   lift: LiftDecision,
   trap: TrapDecision,
 };
 
 // a szervertől kapott `pending` döntés gombjai; csak annál látszik, akinek döntenie kell
+// (a Jósnő két lapjának gombjai a lapok alatt vannak, game/CardDeck)
 export default function Decision({ pending, ...props }) {
   const Component = DECISIONS[pending.type];
   return Component ? <Component pending={pending} {...props} /> : null;

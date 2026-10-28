@@ -1,11 +1,16 @@
 import Decision from './decisions/Decision';
 
-// a kártyás döntéseknél a lap(ok) már a képernyő közepén lebegnek, ezért ott csak egy sáv kell alattuk
-const ON_CARD = new Set(['card', 'card_pick']);
-
-// A saját döntés a képernyő közepén: a kártyáknál a lap alatti sávban, minden másnál (építkezés,
-// felvonó, gambling, csapda) középre nyíló ablakban, a kezdőlap stílusában.
+// A saját döntés a képernyő közepén: a húzott kártyánál a lap alatti sávban, a Jósnő két lapjánál a
+// lapok alatti gombokkal (game/CardDeck), minden másnál (építkezés, felvonó, gambling, csapda) középre
+// nyíló ablakban, a kezdőlap stílusában.
 export default function DecisionLayer({ pending, game, me, busy, error, onChoose }) {
+  if (pending.type === 'card_pick') {
+    return error ? (
+      <div className="card-bar">
+        <p className="decision-error">{error}</p>
+      </div>
+    ) : null;
+  }
   const decision = (
     <Decision
       pending={pending}
@@ -19,7 +24,7 @@ export default function DecisionLayer({ pending, game, me, busy, error, onChoose
   );
   const problem = error && <p className="decision-error">{error}</p>;
 
-  if (ON_CARD.has(pending.type)) {
+  if (pending.type === 'card') {
     return (
       <div className="card-bar">
         {decision}
