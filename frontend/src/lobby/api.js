@@ -27,6 +27,9 @@ export const chooseFigure = (code, playerId, figure) =>
   request('POST', `/games/${code}/figure`, { player_id: playerId, figure });
 export const setVisibility = (code, playerId, isPublic) =>
   request('POST', `/games/${code}/visibility`, { player_id: playerId, public: isPublic });
+export const addBot = (code, playerId) => request('POST', `/games/${code}/bots`, { player_id: playerId });
+export const removeBot = (code, playerId, botId) =>
+  request('POST', `/games/${code}/bots/${botId}/remove`, { player_id: playerId });
 export const startGame = (code, playerId) => request('POST', `/games/${code}/start`, { player_id: playerId });
 export const rollDice = (code, playerId) => request('POST', `/games/${code}/roll`, { player_id: playerId });
 export const chooseOption = (code, playerId, choice) =>

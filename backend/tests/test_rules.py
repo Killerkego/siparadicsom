@@ -14,7 +14,8 @@ import cards
 import fields
 import main
 import play
-from config import BOARD, BUILDING_BY_ID, BUILDINGS, FIELD_COUNT, MAX_PLAYERS, RULES
+from actions import action_duration, record_action
+from config import BOARD, BUILDING_BY_ID, BUILDINGS, FIELD_COUNT, MAX_PLAYERS, RACE_ROUND_MS, RULES
 from stories import FIELD_STORIES
 from deck import CARDS
 from schemas import FigureIn, PlayerIn, PlayerRef, VisibilityIn
@@ -317,6 +318,22 @@ class FieldTests(unittest.TestCase):
         with dice_rolls(5, 5, 1, 3):
             fields.land(game, player, [])
         self.assertEqual(game["players"][1]["money"], RULES["start_money"] + RULES["race_prize"])
+
+    def test_ski_race_rounds_go_to_the_animation(self):
+        game, _ = new_game(3)
+        player = current(game)
+        first, second, third = game["players"]
+        put(player, field_id("siverseny"))
+        with dice_rolls(6, 6, 2, 3, 5):  # 1. kör: döntetlen az első kettő között, 2. kör: a második nyer
+            fields.land(game, player, [])
+            record_action(game, player, 4, [])
+        race = game["last_action"]["race"]
+        self.assertEqual(race["winner_id"], second["id"])
+        self.assertEqual(
+            [[(r["player_id"], r["value"]) for r in rnd] for rnd in race["rounds"]],
+            [[(first["id"], 6), (second["id"], 6), (third["id"], 2)], [(first["id"], 3), (second["id"], 5)]],
+        )
+        self.assertGreater(action_duration(game["last_action"]), 2 * RACE_ROUND_MS, "a verseny ideje az animációhoz számít")
 
     def test_gamble_win(self):
         game, player = self.land_on("gambling")

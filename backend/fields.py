@@ -73,19 +73,23 @@ def school(game: dict, player: dict, moves: list[dict]) -> None:
 
 
 def ski_race(game: dict, player: dict, moves: list[dict]) -> None:
-    """Síverseny: mindenki dob, a legmagasabb nyer; döntetlennél az élen állók újra dobnak."""
+    """Síverseny: mindenki dob, a legmagasabb nyer; döntetlennél az élen állók újra dobnak.
+    A dobási körök a mozgáshoz kerülnek (race_draw), így a böngészők a lépés után kockánként lejátsszák."""
     contenders = game["players"]
     rounds = []
+    texts = []
     while True:
         rolls = {p["id"]: dice() for p in contenders}
-        rounds.append(", ".join(f"{p['name']} {rolls[p['id']]}" for p in contenders))
+        rounds.append([{"player_id": p["id"], "value": rolls[p["id"]]} for p in contenders])
+        texts.append(", ".join(f"{p['name']} {rolls[p['id']]}" for p in contenders))
         best = max(rolls.values())
         contenders = [p for p in contenders if rolls[p["id"]] == best]
         if len(contenders) == 1:
             break
     winner = contenders[0]
     winner["money"] += RULES["race_prize"]
-    add_log(game, f"Síverseny! {' | '.join(rounds)} → {winner['name']} nyert, +{RULES['race_prize']} HK.")
+    game["race_draw"] = {"rounds": rounds, "winner_id": winner["id"], "prize": RULES["race_prize"]}
+    add_log(game, f"Síverseny! {' | '.join(texts)} → {winner['name']} nyert, +{RULES['race_prize']} HK.")
 
 
 def gambling(game: dict, player: dict, moves: list[dict]) -> None:

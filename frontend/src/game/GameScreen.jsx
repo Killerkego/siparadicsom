@@ -7,6 +7,7 @@ import GamePanel from '../hud/GamePanel';
 import LoadingScreen from '../hud/LoadingScreen';
 import PlayerCards from '../hud/PlayerCards';
 import RollBar from '../hud/RollBar';
+import SkiRace from '../hud/SkiRace';
 import TrapAlert from '../hud/TrapAlert';
 import Victory from '../hud/Victory';
 import { fieldName, fields } from './format';
@@ -14,7 +15,7 @@ import GameScene from './GameScene';
 import { useGameTimeline } from './useGameTimeline';
 
 // A játék képernyője: a 3D jelenet és fölötte a felületek (játékoskártyák, panel, középen a saját döntés,
-// dobás sáv, játékkód és kilépés, fejlesztői fül, a bevételi/kiadási mezők története, értesítés az elsült
+// dobás sáv, játékkód és kilépés, fejlesztői fül, síverseny, a bevételi/kiadási mezők története, értesítés az elsült
 // saját csapdáról, győzelem, a modellek betöltéséig a töltőképernyő).
 // Itt dől el, ki mit tehet éppen; a szerver felé a kéréseket a `send` küldi, a hibát a panel mutatja.
 export default function GameScreen({ game, playerId, onRoll, onChoose, onLeave, onDevMove, onDevBuildAll }) {
@@ -101,6 +102,7 @@ export default function GameScreen({ game, playerId, onRoll, onChoose, onLeave, 
           onBuildAll={() => send(onDevBuildAll)}
         />
       )}
+      <SkiRace action={timeline.action} players={game.players} playerId={playerId} />
       <FieldStory event={settled.field_event} players={settled.players} playerId={playerId} />
       <TrapAlert event={settled.trap_event} players={settled.players} rules={game.rules} playerId={playerId} />
       {/* a töltőképernyő után nyílik, hogy a konfetti szétrobbanása látsszon */}

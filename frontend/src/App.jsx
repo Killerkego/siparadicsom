@@ -17,6 +17,8 @@ export default function App() {
     create,
     join,
     setPublic,
+    addBot,
+    removeBot,
     pickFigure,
     start,
     roll,
@@ -48,6 +50,8 @@ export default function App() {
         game={game}
         playerId={session.playerId}
         onSetPublic={setPublic}
+        onAddBot={addBot}
+        onRemoveBot={removeBot}
         onPickFigure={pickFigure}
         onStart={start}
         onLeave={leave}

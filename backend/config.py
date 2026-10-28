@@ -63,3 +63,5 @@ DICE_MS = 1200
 STEP_MS = 300
 JUMP_MS = 900
 CARD_MS = 1300  # kártyahúzás a mozgás végén (a lap a kamera elé repül; ott marad, amíg le nem okézzák)
+RACE_ROUND_MS = 2600  # síverseny: egy dobási kör (a kockák gurulnak, aztán látszik, ki dobta a legtöbbet)
+RACE_RESULT_MS = 2400  # síverseny: a győztes kihirdetése a körök után

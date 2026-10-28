@@ -1,6 +1,6 @@
 """Aranyhegy Szálló backend: a végpontok. A játék szabályai a többi modulban vannak:
 config (beállítások), store (játékok, állapot), actions (mozgás, pénz), fields (mezők),
-turns (kör vége, építkezés), play (dobás, döntések).
+turns (kör vége, építkezés), play (dobás, döntések), bots (gépi játékosok).
 
 A frontend `npm run dev` parancsa magától elindítja. Külön futtatás a projekt gyökeréből:
     backend/.venv/Scripts/python -m uvicorn main:app --app-dir backend --port 8000 --reload --reload-dir backend
@@ -8,6 +8,7 @@ A frontend `npm run dev` parancsa magától elindítja. Külön futtatás a proj
 
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 
+import bots
 import play
 from config import DEV_MODE, FIGURE_COUNT, MAX_PLAYERS, MIN_PLAYERS
 from schemas import ChoiceIn, CreateIn, DevMoveIn, FigureIn, PlayerIn, PlayerRef, VisibilityIn
@@ -29,9 +30,19 @@ app = FastAPI(title="Aranyhegy Szálló")
 
 
 async def updated(game: dict) -> dict:
-    """Mindenkinek elküldi az új állapotot, és a kérésre is ezzel válaszol."""
+    """Mindenkinek elküldi az új állapotot, és a kérésre is ezzel válaszol. Ha gépi játékos következik,
+    elindítja a lépéseit."""
     await broadcast(game)
+    bots.kick(game)
     return public_state(game)
+
+
+def host_in_lobby(game: dict, player_id: str) -> None:
+    """Csak a házigazda, és csak a játék indítása előtt (gépi játékosok hozzáadása, eltávolítása)."""
+    if player_id != game["host_id"]:
+        raise HTTPException(403, "Csak a házigazda teheti meg.")
+    if game["status"] != "lobby":
+        raise HTTPException(409, "A játék már elindult.")
 
 
 # --- lobbi ---
@@ -98,6 +109,28 @@ async def choose_figure(code: str, body: FigureIn):
     return await updated(game)
 
 
+@app.post("/api/games/{code}/bots")
+async def add_bot(code: str, body: PlayerRef):
+    """A házigazda gépi játékost ad a lobbihoz; ugyanúgy játszik, mint a többiek."""
+    game = get_game(code)
+    host_in_lobby(game, body.player_id)
+    if len(game["players"]) >= MAX_PLAYERS:
+        raise HTTPException(409, "A játék megtelt.")
+    game["players"].append(bots.new_bot(game))
+    return await updated(game)
+
+
+@app.post("/api/games/{code}/bots/{bot_id}/remove")
+async def remove_bot(code: str, bot_id: str, body: PlayerRef):
+    game = get_game(code)
+    host_in_lobby(game, body.player_id)
+    bot = find_player(game, bot_id)
+    if bot is None or not bots.is_bot(bot):
+        raise HTTPException(404, "Nincs ilyen gépi játékos.")
+    game["players"].remove(bot)
+    return await updated(game)
+
+
 @app.post("/api/games/{code}/start")
 async def start_game(code: str, body: PlayerRef):
     game = get_game(code)
@@ -119,12 +152,13 @@ async def leave_game(code: str, body: PlayerRef):
     if index is None:
         return {"ok": True}
     game["players"].pop(index)
-    if not game["players"]:
+    humans = [p for p in game["players"] if not bots.is_bot(p)]
+    if not humans:  # gépi játékosok magukban nem játszanak tovább
         del games[game["code"]]
         connections.pop(game["code"], None)
         return {"ok": True}
     if game["host_id"] == body.player_id:
-        game["host_id"] = game["players"][0]["id"]  # a következő játékos lesz a házigazda
+        game["host_id"] = humans[0]["id"]  # a következő (emberi) játékos lesz a házigazda
     if game["pending"] and game["pending"]["player_id"] == body.player_id:
         game["pending"] = None
     game["traps"] = {f: t for f, t in game["traps"].items() if t["owner"] != body.player_id}
@@ -132,7 +166,7 @@ async def leave_game(code: str, body: PlayerRef):
     if index < game["turn"]:
         game["turn"] -= 1
     game["turn"] %= len(game["players"])
-    await broadcast(game)
+    await updated(game)
     return {"ok": True}
 
 

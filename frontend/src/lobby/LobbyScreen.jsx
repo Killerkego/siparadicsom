@@ -4,7 +4,16 @@ import { FIGURES } from '../game/figures';
 import VisibilityToggle, { VisibilityIcon } from './VisibilityToggle';
 
 // Lobbi: itt várnak a játékosok, amíg a házigazda el nem indítja a játékot
-export default function LobbyScreen({ game, playerId, onSetPublic, onPickFigure, onStart, onLeave }) {
+export default function LobbyScreen({
+  game,
+  playerId,
+  onSetPublic,
+  onAddBot,
+  onRemoveBot,
+  onPickFigure,
+  onStart,
+  onLeave,
+}) {
   const [error, setError] = useState('');
   const [preview, setPreview] = useState(null); // melyik figura látszik nagyban (sorszám)
   const [copied, setCopied] = useState(false);
@@ -27,6 +36,7 @@ export default function LobbyScreen({ game, playerId, onSetPublic, onPickFigure,
   };
   const isHost = game.host_id === playerId;
   const enough = game.players.length >= game.min_players;
+  const full = game.players.length >= game.max_players;
 
   const run = async (request) => {
     setError('');
@@ -86,9 +96,25 @@ export default function LobbyScreen({ game, playerId, onSetPublic, onPickFigure,
               <span>{p.name}</span>
               {p.id === game.host_id && <span className="badge">házigazda</span>}
               {p.id === playerId && <span className="badge me">te</span>}
+              {p.bot && <span className="badge bot">gépi</span>}
+              {p.bot && isHost && (
+                <button
+                  className="remove-bot"
+                  onClick={() => run(() => onRemoveBot(p.id))}
+                  title={`${p.name} eltávolítása`}
+                  aria-label={`${p.name} eltávolítása`}
+                >
+                  ×
+                </button>
+              )}
             </li>
           ))}
         </ul>
+        {isHost && (
+          <button className="add-bot" disabled={full} onClick={() => run(onAddBot)}>
+            + Gépi játékos hozzáadása
+          </button>
+        )}
 
         <h2>Bábud</h2>
         <div className="figure-picker">

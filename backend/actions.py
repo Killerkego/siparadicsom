@@ -2,7 +2,17 @@
 
 import secrets
 
-from config import CARD_MS, DICE_MS, FIELD_COUNT, JUMP_MS, LOG_LENGTH, RULES, STEP_MS
+from config import (
+    CARD_MS,
+    DICE_MS,
+    FIELD_COUNT,
+    JUMP_MS,
+    LOG_LENGTH,
+    RACE_RESULT_MS,
+    RACE_ROUND_MS,
+    RULES,
+    STEP_MS,
+)
 from store import now_ms
 
 
@@ -24,13 +34,22 @@ def add_log(game: dict, text: str) -> None:
 
 def action_duration(action: dict) -> int:
     moves = sum(JUMP_MS if m["type"] == "jump" else abs(m["steps"]) * STEP_MS for m in action["moves"])
-    return (DICE_MS if action["dice"] else 0) + moves + (CARD_MS if action.get("card") else 0)
+    race = action.get("race")
+    race_ms = len(race["rounds"]) * RACE_ROUND_MS + RACE_RESULT_MS if race else 0
+    return (DICE_MS if action["dice"] else 0) + moves + (CARD_MS if action.get("card") else 0) + race_ms
 
 
 def animating(game: dict) -> bool:
     """Tart-e még az utolsó mozgás animációja (addig senki nem léphet)."""
+    return animation_left(game) > 0
+
+
+def animation_left(game: dict) -> int:
+    """Hány ms van még hátra az utolsó mozgás animációjából (0, ha már véget ért)."""
     action = game["last_action"]
-    return action is not None and now_ms() < action["at"] + action_duration(action)
+    if action is None:
+        return 0
+    return max(0, action["at"] + action_duration(action) - now_ms())
 
 
 def record_action(game: dict, player: dict, dice_value: int | None, moves: list[dict]) -> None:
@@ -44,6 +63,7 @@ def record_action(game: dict, player: dict, dice_value: int | None, moves: list[
         "dice": dice_value,
         "moves": moves,
         "card": game.pop("card_draw", False),  # a mozgás végén kártyát húz (animáció)
+        "race": game.pop("race_draw", None),  # síverseny a mozgás végén: a dobási körök és a győztes
     }
 
 

@@ -665,6 +665,188 @@
   }
 }
 
+/* síverseny: mindenki saját, a színével keretezett kockával dob; a legnagyobb dobás aranyban kiemelkedik */
+.race-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 23;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: radial-gradient(ellipse at center, rgba(31, 35, 38, 0.1), rgba(31, 35, 38, 0.38));
+  pointer-events: none;
+  animation: hud-fade 260ms ease both;
+}
+
+.race-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  width: min(640px, 100%);
+  box-sizing: border-box;
+  padding: 24px 26px 22px;
+  border: 1px solid #e8dcc5;
+  border-radius: 20px;
+  background: radial-gradient(ellipse at 50% 0%, #fffefb 0%, var(--hud-cream) 50%, var(--hud-cream-2) 100%);
+  box-shadow: 0 24px 60px rgba(31, 35, 38, 0.35), inset 0 0 0 5px rgba(255, 255, 255, 0.7);
+  color: var(--hud-text);
+  text-align: center;
+  user-select: none;
+  animation: hud-pop 360ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+.race-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 120px;
+  height: 3px;
+  border-radius: 0 0 3px 3px;
+  background: var(--hud-button);
+  transform: translateX(-50%);
+}
+
+.race-card h2 {
+  margin: 0;
+  color: var(--hud-heading);
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 28px;
+  font-weight: 600;
+}
+
+.race-lanes {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+  width: 100%;
+}
+
+.race-lane {
+  display: flex;
+  flex: 1 1 110px;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  max-width: 140px;
+  padding: 12px 8px 10px;
+  border: 1px solid var(--hud-line);
+  border-top: 4px solid var(--player);
+  border-radius: 14px;
+  background: #fffdf9;
+  transition: opacity 300ms ease, transform 300ms ease, box-shadow 300ms ease;
+}
+
+.race-lane.out {
+  opacity: 0.38;
+}
+
+.race-lane.best {
+  box-shadow: 0 0 0 2px #d9b36b, 0 8px 22px rgba(193, 155, 88, 0.35);
+  transform: translateY(-4px);
+}
+
+.race-lane.winner {
+  background: linear-gradient(180deg, #fff8e6, #fffdf9);
+  box-shadow: 0 0 0 3px #c19b58, 0 10px 28px rgba(193, 155, 88, 0.45);
+  transform: translateY(-6px) scale(1.04);
+}
+
+.race-portrait {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  overflow: hidden;
+  border: 2px solid var(--player);
+  border-radius: 50%;
+  background: #f5efe4;
+  font-size: 24px;
+}
+
+.race-portrait img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.race-name {
+  max-width: 100%;
+  overflow: hidden;
+  color: var(--hud-text);
+  font-size: 13px;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* a dobókocka: 3D kocka hat lappal, a lapokon pöttyök; a kerete a játékos színe */
+/* pörgés közben a kocka sarkai kilógnak és pattog: ennyi hely kell neki a név és az érték között */
+.race-die-stage {
+  margin: 22px 0 14px;
+  perspective: 420px;
+}
+
+.race-die {
+  --size: 54px;
+  --half: 27px;
+  position: relative;
+  width: var(--size);
+  height: var(--size);
+  transform-style: preserve-3d;
+}
+
+.race-die-face {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  place-items: center;
+  box-sizing: border-box;
+  padding: 7px;
+  border: 3px solid var(--die-color);
+  border-radius: 10px;
+  background: radial-gradient(circle at 35% 30%, #ffffff, #f1ece2);
+  backface-visibility: hidden;
+}
+
+.race-die-face .pip {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #2b3540;
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.25);
+}
+
+.race-die-face .pip.empty {
+  visibility: hidden;
+}
+
+.race-value {
+  min-height: 24px;
+  color: var(--hud-heading);
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.race-caption {
+  margin: 2px 0 0;
+  color: var(--hud-muted);
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.race-caption.result {
+  color: var(--hud-heading);
+  font-size: 17px;
+}
+
 /* értesítés: valaki belelépett a saját csapdánkba; kattintásra vagy pár másodperc múlva eltűnik */
 .trap-alert-overlay {
   position: fixed;

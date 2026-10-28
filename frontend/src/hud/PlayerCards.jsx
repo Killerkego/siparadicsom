@@ -43,6 +43,7 @@ export default function PlayerCards({ players, buildings, turnPlayerId, playerId
                   {p.id === playerId && <span className="me"> (te)</span>}
                 </b>
                 <span className="where">
+                  {p.bot && 'Gépi · '}
                   {figure.name} · {fieldLabel(p)}
                 </span>
               </div>

@@ -910,6 +910,54 @@
   color: #fffdf9;
 }
 
+/* gépi játékosok: jelölés, eltávolítás (×) és hozzáadás a lobbiban */
+.lobby-card .badge.bot {
+  background: #e9eef2;
+  color: #52626f;
+}
+
+.remove-bot {
+  margin-left: auto;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 1px solid #e9dfce;
+  border-radius: 50%;
+  background: #fffdf9;
+  color: #a07a45;
+  font: inherit;
+  font-size: 17px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.remove-bot:hover {
+  background: #f3ead9;
+  border-color: #c6a363;
+}
+
+.add-bot {
+  padding: 9px 12px;
+  border: 1px dashed #d9c6a2;
+  border-radius: 10px;
+  background: #fdfbf7;
+  color: #806334;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.add-bot:not(:disabled):hover {
+  background: #f5efe4;
+  border-color: #c6a363;
+}
+
+.add-bot:disabled {
+  color: #c9bfae;
+  cursor: default;
+}
+
 .lobby-card .btn {
   border: 1px solid #ad8747;
   background: linear-gradient(135deg, #bd9a5d, #9b7537);

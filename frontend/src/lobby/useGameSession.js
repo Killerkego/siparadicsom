@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import {
+  addBot,
   chooseFigure,
   chooseOption,
   createGame,
@@ -7,6 +8,7 @@ import {
   devMove,
   joinGame,
   leaveGame,
+  removeBot,
   rollDice,
   setVisibility,
   startGame,
@@ -81,6 +83,8 @@ export function useGameSession() {
     join: async (code, name) => enter(await joinGame(code, name)),
     // a válaszból azonnal frissül, nem kell megvárni a WebSocket üzenetet
     setPublic: async (isPublic) => setGame(await setVisibility(session.code, session.playerId, isPublic)),
+    addBot: async () => setGame(await addBot(session.code, session.playerId)),
+    removeBot: async (botId) => setGame(await removeBot(session.code, session.playerId, botId)),
     pickFigure: async (figure) => setGame(await chooseFigure(session.code, session.playerId, figure)),
     start: async () => setGame(await startGame(session.code, session.playerId)),
     roll: async () => setGame(await rollDice(session.code, session.playerId)),
