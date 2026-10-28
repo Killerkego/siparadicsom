@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
@@ -20,6 +20,11 @@ const OUTRO_TIME = 450; // ms, az elfogadott lap eltűnése
 // így a lap teteje sem kerül ferdén távolabb, és a felirat végig éles marad
 const FACE_TILT = THREE.MathUtils.degToRad(22);
 const BACK_URL = '/cards/hatlap.jpg';
+// Jósnő: a két kihúzott lap egymás mellett lebeg a kamera előtt, a választás után eltűnnek
+const PICK_SCALE = 3.3;
+const PICK_DX = 1.25; // a lapok középvonala a középtől oldalra
+const PICK_DELAY = 400; // ms, előbb a Jósnő lapja tűnik el
+const PICK_STAGGER = 180; // ms, a jobb oldali lap ennyivel később indul
 
 const smooth = (x) => x * x * (3 - 2 * x);
 const clamp01 = (x) => Math.min(1, Math.max(0, x));
@@ -53,9 +58,74 @@ function CardFaces({ back, front }) {
   );
 }
 
+// Jósnő egyik lapja: a pakli tetejéről a kamera elé repül a helyére (side: -1 bal, 1 jobb), ott lebeg;
+// a választó játékos rákattintva választ. leave: a választás ideje, chosen: ezt a lapot választotta.
+function PickCard({ id, side, start, leave, chosen, geometry, top, onPick }) {
+  const ref = useRef();
+  const [hovered, setHovered] = useState(false);
+  const materials = useMemo(() => {
+    const face = (map) => new THREE.MeshBasicMaterial({ map, transparent: true, toneMapped: false });
+    return {
+      edge: new THREE.MeshStandardMaterial({ color: '#e6dccb', roughness: 0.8, transparent: true }),
+      back: face(cardTexture(BACK_URL)),
+      front: face(cardTexture(`/cards/${id}.jpg`)),
+    };
+  }, [id]);
+  useEffect(() => () => Object.values(materials).forEach((m) => m.dispose()), [materials]);
+  useEffect(() => () => (document.body.style.cursor = 'auto'), []);
+
+  const target = useMemo(() => new THREE.Vector3(SHOW.x + side * PICK_DX, SHOW.y - 0.2, SHOW.z), [side]);
+
+  useFrame(() => {
+    const c = ref.current;
+    const now = Date.now();
+    const t = clamp01((now - start) / CARD_TIME);
+    const fade = leave ? clamp01((now - leave) / OUTRO_TIME) : 0;
+    c.visible = now >= start && fade < 1;
+    if (!c.visible) return;
+    const lift = smooth(clamp01(t / 0.3));
+    const fly = smooth(clamp01((t - 0.3) / 0.7));
+    const from = new THREE.Vector3(DECK.x + top.dx, top.y + T + 0.35 * lift, DECK.z);
+    c.position.lerpVectors(from, target, fly);
+    c.position.y +=
+      Math.sin(fly * Math.PI) * 0.8 +
+      (fly === 1 ? 0.06 * Math.sin(now / 500 + side) : 0) +
+      (chosen ? fade * 1.2 : -fade * 0.6);
+    c.rotation.set(-fly * (Math.PI / 2 + FACE_TILT), top.rot * (1 - fly) + fly * Math.PI * 2, 0);
+    const pop = hovered && onPick && !leave ? 1.06 : 1;
+    c.scale.setScalar(THREE.MathUtils.lerp(1, PICK_SCALE, fly) * pop * (1 - fade * 0.5));
+    materials.edge.opacity = materials.back.opacity = materials.front.opacity = 1 - fade;
+  });
+
+  const clickable = onPick && !leave;
+  return (
+    <group
+      ref={ref}
+      visible={false}
+      onClick={(e) => {
+        if (!clickable || !ref.current.visible) return;
+        e.stopPropagation();
+        onPick(id);
+      }}
+      onPointerOver={() => {
+        setHovered(true);
+        if (clickable) document.body.style.cursor = 'pointer';
+      }}
+      onPointerOut={() => {
+        setHovered(false);
+        document.body.style.cursor = 'auto';
+      }}
+    >
+      <mesh geometry={geometry} material={materials.edge} castShadow />
+      <CardFaces back={materials.back} front={materials.front} />
+    </group>
+  );
+}
+
 // draw: { seq, start, card } – a húzás kezdete a böngésző órája szerint és a lap azonosítója;
-// held: a lap még elfogadásra vár; onAck: ha a néző fogadhatja el, a lapra kattintva is megteheti
-export default function CardDeck({ draw, held, onAck }) {
+// held: a lap még elfogadásra vár; onAck: ha a néző fogadhatja el, a lapra kattintva is megteheti;
+// pick: a Jósnő két lapja, amíg a választás tart; onPick: ha a néző választ, a lapra kattintva teheti meg
+export default function CardDeck({ draw, held, onAck, pick, onPick }) {
   const card = useRef();
   const outro = useRef({ seq: null, start: 0 });
   const heldSeq = useRef(null); // melyik húzás lapját láttuk várakozni (újratöltéskor a régi ne villanjon fel)
@@ -110,6 +180,24 @@ export default function CardDeck({ draw, held, onAck }) {
   );
   const top = stack[COUNT - 1];
 
+  // a Jósnő lapjai: megjelenéskor felrepülnek, a választás után (a szerver már nem küldi őket) még
+  // egy rövid ideig eltűnőben látszanak; a választó a saját választását is tudja
+  const pickKey = pick?.join(',');
+  const [picking, setPicking] = useState(null);
+  useEffect(() => {
+    if (pickKey) {
+      setPicking((p) => (p?.key === pickKey ? p : { key: pickKey, options: pickKey.split(','), start: Date.now() + PICK_DELAY }));
+      return;
+    }
+    setPicking((p) => (p && !p.leave ? { ...p, leave: Date.now() } : p));
+    const timer = setTimeout(() => setPicking((p) => (p?.leave ? null : p)), OUTRO_TIME + 50);
+    return () => clearTimeout(timer);
+  }, [pickKey]);
+  const choose = (id) => {
+    setPicking((p) => p && { ...p, chosen: id });
+    onPick(id);
+  };
+
   useFrame(() => {
     const c = card.current;
     const now = Date.now();
@@ -161,6 +249,20 @@ export default function CardDeck({ draw, held, onAck }) {
         <mesh geometry={geometry} material={drawn.edge} castShadow />
         <CardFaces back={drawn.back} front={drawn.front} />
       </group>
+      {/* a Jósnő két lapja */}
+      {picking?.options.map((id, i) => (
+        <PickCard
+          key={`${picking.key}-${id}`}
+          id={id}
+          side={i ? 1 : -1}
+          start={picking.start + i * PICK_STAGGER}
+          leave={picking.leave}
+          chosen={picking.chosen === id}
+          geometry={geometry}
+          top={top}
+          onPick={onPick && !picking.leave ? choose : null}
+        />
+      ))}
     </group>
   );
 }

@@ -1,35 +1,90 @@
 import { FIGURES } from '../game/figures';
 import { hk } from '../game/format';
 import { usePortraits } from '../game/portraits';
+import Confetti from './Confetti';
 
-// a játék vége: a győztes, a figurája és a felépült síparadicsom; további lépés már nincs
+// A játék vége: a győztes érmében, mögötte forgó fénysugarak és konfetti; a három teljesült győzelmi
+// feltétel, a felépült síparadicsom elemei és a többiek helyezése. További lépés már nincs.
 export default function Victory({ game, playerId, onLeave }) {
   const portraits = usePortraits();
   const winner = game.players.find((p) => p.id === game.winner_id);
   if (!winner) return null;
   const figure = FIGURES[winner.figure];
+  const isMe = winner.id === playerId;
+  // a többiek: több elem előrébb, egyenlőnél a több pénz
+  const others = game.players
+    .filter((p) => p.id !== winner.id)
+    .sort((a, b) => b.buildings.length - a.buildings.length || b.money - a.money);
+
   return (
-    <div className="victory">
-      <div className="victory-card">
-        {portraits[winner.figure] ? (
-          <img className="winner-portrait" src={portraits[winner.figure]} alt={figure.name} />
-        ) : (
-          <div className="trophy">🏆</div>
-        )}
-        <h2>{winner.id === playerId ? 'Nyertél!' : `${winner.name} nyert!`}</h2>
-        <p>
-          <span className="dot" style={{ background: winner.color }} /> {winner.name} · {figure.icon} {figure.name}
+    <div className="victory" style={{ '--player': winner.color }}>
+      <Confetti color={winner.color} />
+      <div className="victory-card" role="dialog" aria-modal="true" aria-labelledby="victory-title">
+        <p className="victory-eyebrow">
+          <span aria-hidden="true">✦</span> Vége a szezonnak <span aria-hidden="true">✦</span>
         </p>
-        <p>
-          Felépítette a teljes síparadicsomot ({game.buildings.length}/{game.buildings.length}), és {hk(winner.money)}{' '}
-          maradt a számláján.
+
+        <div className="victory-medal">
+          <span className="victory-rays" aria-hidden="true" />
+          <div className="victory-portrait">
+            {portraits[winner.figure] ? <img src={portraits[winner.figure]} alt={figure.name} /> : <span>{figure.icon}</span>}
+          </div>
+          <span className="victory-crown" aria-hidden="true">
+            ✦
+          </span>
+        </div>
+
+        <h2 id="victory-title">{isMe ? 'Nyertél!' : `${winner.name} nyert!`}</h2>
+        <p className="victory-sub">
+          {isMe ? 'Felépítetted' : 'Felépítette'} a teljes síparadicsomot · {figure.name}
         </p>
-        <ul>
-          {game.buildings.map((b) => (
-            <li key={b.id}>✔ {b.name}</li>
+
+        <ul className="victory-goals">
+          <li>
+            <b>
+              {winner.buildings.length}/{game.buildings.length}
+            </b>
+            <small>elem kész</small>
+          </li>
+          <li>
+            <b>{hk(winner.money)}</b>
+            <small>legalább {hk(game.rules.win_money)}</small>
+          </li>
+          <li>
+            <b>Nincs</b>
+            <small>tartozás</small>
+          </li>
+        </ul>
+
+        <ul className="victory-buildings">
+          {game.buildings.map((b, i) => (
+            <li key={b.id} style={{ animationDelay: `${900 + i * 90}ms` }}>
+              {b.name}
+            </li>
           ))}
         </ul>
-        <button onClick={onLeave}>Új játék</button>
+
+        {others.length > 0 && (
+          <ol className="victory-ranking" start={2}>
+            {others.map((p) => (
+              <li key={p.id} style={{ '--player': p.color }}>
+                <span className="dot" />
+                <span className="name">
+                  {p.name}
+                  {p.id === playerId && <em> (te)</em>}
+                </span>
+                <span className="built">
+                  {p.buildings.length}/{game.buildings.length} elem
+                </span>
+                <span className="money">{hk(p.money)}</span>
+              </li>
+            ))}
+          </ol>
+        )}
+
+        <button className="victory-button" onClick={onLeave}>
+          Új játék
+        </button>
       </div>
     </div>
   );

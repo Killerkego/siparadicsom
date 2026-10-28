@@ -46,7 +46,7 @@ export default function PlayerCards({ players, buildings, turnPlayerId, playerId
                   {figure.name} · {fieldLabel(p)}
                 </span>
               </div>
-              {turn && <span className="badge">Következik</span>}
+              {turn && <span className="badge">Soron</span>}
             </div>
             <dl className="stats">
               <dt>Egyenleg</dt>
