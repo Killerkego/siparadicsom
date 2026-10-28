@@ -1,9 +1,11 @@
-// Dobás a képernyő alján középen. A saját körben arany gomb, máskor csak kiírja, ki jön.
+// Dobás a képernyő alján középen. A saját körben arany gomb, máskor csak kiírja, ki jön (mozgás közben: ki lép).
 // Döntés közben nem látszik: a kártya a képernyő közepén, a többi döntés a jobb oldali panelen van.
 export default function RollBar({ game, playerId, phase, drawing, canRoll, onRoll }) {
   if ((phase === 'idle' && game.pending) || game.status !== 'playing') return null;
-  const myTurn = game.turn_player_id === playerId;
-  const turnPlayer = game.players.find((p) => p.id === game.turn_player_id);
+  // a szerver a dobás után azonnal továbbadja a kört, ezért a mozgás alatt a dobót mutatjuk, nem a következőt
+  const actorId = phase === 'idle' ? game.turn_player_id : (game.last_action?.player_id ?? game.turn_player_id);
+  const myTurn = actorId === playerId;
+  const turnPlayer = game.players.find((p) => p.id === actorId);
 
   let label = 'Dobás';
   if (phase === 'rolling') label = 'Gurul…';
