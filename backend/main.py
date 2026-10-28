@@ -1,4 +1,4 @@
-"""Síparadicsom backend: a végpontok. A játék szabályai a többi modulban vannak:
+"""Aranyhegy Szálló backend: a végpontok. A játék szabályai a többi modulban vannak:
 config (beállítások), store (játékok, állapot), actions (mozgás, pénz), fields (mezők),
 turns (kör vége, építkezés), play (dobás, döntések).
 
@@ -24,7 +24,7 @@ from store import (
 )
 from turns import acting_player
 
-app = FastAPI(title="Síparadicsom")
+app = FastAPI(title="Aranyhegy Szálló")
 
 
 async def updated(game: dict) -> dict:

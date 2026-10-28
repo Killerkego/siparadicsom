@@ -43,7 +43,7 @@ RULES = {
     "weak_start_bonus": 1000,  # Gyenge árfolyam kártya után a START-on csak ennyi jár
 }
 
-# A felépítendő síparadicsom elemei. A játékos minden köre végén legfeljebb egyet vehet meg,
+# A felépítendő Aranyhegy Szálló elemei. A játékos minden köre végén legfeljebb egyet vehet meg,
 # ha van rá pénze, megvannak az előfeltételei és még nincs meg neki. Összesen 42 000 HK,
 # a kezdőtőke ennek 24%-a.
 BUILDINGS = [

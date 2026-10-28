@@ -1,4 +1,4 @@
-# Tesztjegyzőkönyv – Síparadicsom
+# Tesztjegyzőkönyv – Aranyhegy Szálló
 
 A feladatleírás 12.2 és I/14. pontja szerinti ellenőrzés. A játékszabályokat automatikus tesztek
 ellenőrzik a backendben (`backend/tests/`), a Python beépített `unittest` moduljával, külön telepítés

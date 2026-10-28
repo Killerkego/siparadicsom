@@ -15,6 +15,7 @@ import fields
 import main
 import play
 from config import BOARD, BUILDING_BY_ID, BUILDINGS, FIELD_COUNT, MAX_PLAYERS, RULES
+from stories import FIELD_STORIES
 from deck import CARDS
 from schemas import FigureIn, PlayerIn, PlayerRef
 
@@ -209,6 +210,20 @@ class FieldTests(unittest.TestCase):
     def test_expense_field(self):
         game, player = self.land_on("kiadas")
         self.assertEqual(player["money"], RULES["start_money"] - RULES["expense_field"])
+
+    def test_income_and_expense_fields_tell_a_story(self):
+        for kind, sign in (("bevetel", 1), ("kiadas", -1)):
+            for field in [f["id"] for f in BOARD if f["type"] == kind]:
+                with self.subTest(field=field):
+                    self.assertTrue(FIELD_STORIES.get(field), "minden bevételi/kiadási mezőhöz van történet")
+                    game, _ = new_game(2)
+                    player = current(game)
+                    put(player, field)
+                    fields.land(game, player, [])
+                    event = game["field_event"]
+                    self.assertEqual((event["field"], event["player_id"]), (field, player["id"]))
+                    self.assertIn(event["story"], FIELD_STORIES[field])
+                    self.assertEqual(event["amount"], sign * RULES["income_field" if sign > 0 else "expense_field"])
 
     def test_neutral_field(self):
         game, player = self.land_on("semleges")

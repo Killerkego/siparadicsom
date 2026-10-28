@@ -28,9 +28,12 @@ export default function HomeScreen({ onCreate, onJoin }) {
           <img className="home-landscape" src="/alpine-winter.jpg" alt="" aria-hidden="true" />
           <Snowfall />
           <div className="home-brand">
-            <p className="home-eyebrow"><span aria-hidden="true">✦</span> ALPINE CLUB · AURELIA RESORT <span aria-hidden="true">✦</span></p>
-            <h1 id="home-title">Síparadicsom</h1>
-            <p className="home-tagline">Öt csillag a felhők felett.</p>
+            <img className="home-logo" src="/logo.png" alt="" aria-hidden="true" />
+            <div>
+              <p className="home-eyebrow"><span aria-hidden="true">✦</span> ALPESI ÜDÜLŐ · ÖTCSILLAGOS SZÁLLÓ <span aria-hidden="true">✦</span></p>
+              <h1 id="home-title">Aranyhegy Szálló</h1>
+              <p className="home-tagline">Öt csillag a felhők felett.</p>
+            </div>
           </div>
           <p className="home-caption">Találkozzunk a hegytetőn.</p>
         </section>

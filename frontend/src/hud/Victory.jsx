@@ -4,7 +4,7 @@ import { usePortraits } from '../game/portraits';
 import Confetti from './Confetti';
 
 // A játék vége: a győztes érmében, mögötte forgó fénysugarak és konfetti; a három teljesült győzelmi
-// feltétel, a felépült síparadicsom elemei és a többiek helyezése. További lépés már nincs.
+// feltétel, a felépült Aranyhegy Szálló elemei és a többiek helyezése. További lépés már nincs.
 export default function Victory({ game, playerId, onLeave }) {
   const portraits = usePortraits();
   const winner = game.players.find((p) => p.id === game.winner_id);
@@ -36,7 +36,7 @@ export default function Victory({ game, playerId, onLeave }) {
 
         <h2 id="victory-title">{isMe ? 'Nyertél!' : `${winner.name} nyert!`}</h2>
         <p className="victory-sub">
-          {isMe ? 'Felépítetted' : 'Felépítette'} a teljes síparadicsomot · {figure.name}
+          {isMe ? 'Felépítetted' : 'Felépítette'} a teljes Aranyhegy Szállót · {figure.name}
         </p>
 
         <ul className="victory-goals">

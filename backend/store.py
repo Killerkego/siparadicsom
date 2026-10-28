@@ -83,6 +83,7 @@ def new_game(host: dict) -> dict:
         "pending": None,  # döntésre vár: card / gamble / lift / trap / build
         "traps": {},  # mező sorszáma (szövegként) -> ki rakta le és milyet
         "trap_event": None,  # az utolsó elsült csapda: hol, kié, ki lépett bele
+        "field_event": None,  # az utolsó bevételi/kiadási mező története: ki, hol, mennyi és miért
         "log": [],
         "winner_id": None,
         "deck": new_deck(),  # a húzópakli (a teteje az első elem); a kliens csak a darabszámot látja
@@ -116,6 +117,7 @@ def public_state(game: dict) -> dict:
         "pending": game["pending"],
         "traps": game["traps"],
         "trap_event": game["trap_event"],
+        "field_event": game["field_event"],
         "log": game["log"],
         "rules": RULES,
         "buildings": BUILDINGS,

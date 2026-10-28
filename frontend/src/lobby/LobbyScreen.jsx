@@ -43,6 +43,7 @@ export default function LobbyScreen({ game, playerId, onPickFigure, onStart, onL
     <main className="page lobby-page">
       <div className="card lobby-card">
         <div className="lobby-heading">
+          <img className="lobby-logo" src="/logo.png" alt="Aranyhegy Szálló" />
           <p className="lobby-eyebrow">
             <span aria-hidden="true">✦</span> VÁRÓTEREM
           </p>

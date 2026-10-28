@@ -2,9 +2,12 @@
 (oktatás, síverseny, gambling, felvonó, csapda). Ha a játékosnak döntenie kell, a játék `pending`
 mezőjébe kerül."""
 
+import secrets
+
 import cards
 from actions import add_log, dice, pay, walk
 from config import BOARD, LIFTS, RULES
+from stories import FIELD_STORIES
 from store import find_player
 
 
@@ -14,6 +17,20 @@ def land(game: dict, player: dict, moves: list[dict]) -> None:
     handler = FIELD_TYPES.get(field["type"]) or SPECIAL_FIELDS.get(field.get("special"))
     if handler:
         handler(game, player, moves)
+
+
+def tell_story(game: dict, player: dict, amount: int, note: str) -> None:
+    """Kisorsol egy rövid történetet a mezőhöz (miért jön vagy megy a pénz); a böngészők a mozgás végén
+    mutatják. `amount`: pozitív bevétel, negatív kiadás; `note`: a kártyahatás magyarázata, ha volt."""
+    field = player["position"]
+    game["field_event"] = {
+        "seq": (game["field_event"] or {}).get("seq", 0) + 1,
+        "field": field,
+        "player_id": player["id"],
+        "amount": amount,
+        "story": secrets.choice(FIELD_STORIES[field]),
+        "note": note,
+    }
 
 
 def income(game: dict, player: dict, moves: list[dict]) -> None:
@@ -26,6 +43,7 @@ def income(game: dict, player: dict, moves: list[dict]) -> None:
         extra = " (Szezonnyitó buli: +50%)"
     player["money"] += amount
     add_log(game, f"{player['name']} bevételi mezőre lépett: +{amount} HK{extra}.")
+    tell_story(game, player, amount, extra.strip(" ()"))
 
 
 def expense(game: dict, player: dict, moves: list[dict]) -> None:
@@ -38,6 +56,7 @@ def expense(game: dict, player: dict, moves: list[dict]) -> None:
         extra = " (Könyvelő: csak a fele)"
     pay(game, player, amount)
     add_log(game, f"{player['name']} kiadási mezőre lépett: -{amount} HK{extra}.")
+    tell_story(game, player, -amount, extra.strip(" ()"))
 
 
 def card(game: dict, player: dict, moves: list[dict]) -> None:

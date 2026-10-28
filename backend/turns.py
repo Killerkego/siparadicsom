@@ -106,7 +106,7 @@ def close_turn(game: dict, player: dict) -> None:
         game["status"] = "finished"
         game["winner_id"] = player["id"]
         game["pending"] = None
-        add_log(game, f"{player['name']} felépítette a teljes síparadicsomot és nyert!")
+        add_log(game, f"{player['name']} felépítette a teljes Aranyhegy Szállót és nyert!")
         return
     game["pending"] = None
     tick_effects(game, player)

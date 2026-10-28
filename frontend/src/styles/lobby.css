@@ -247,9 +247,13 @@
 }
 
 .home-brand {
+  display: flex;
+  align-items: center;
+  gap: 18px;
   width: fit-content;
   max-width: 100%;
-  padding: 18px 24px 20px;
+  box-sizing: border-box;
+  padding: 18px 24px 20px 18px;
   border: 1px solid rgba(226, 196, 137, 0.72);
   border-radius: 12px;
   background: rgba(31, 35, 38, 0.53);
@@ -275,19 +279,28 @@
   color: #c19b58;
 }
 
+/* az Aranyhegy Szálló logója a cím mellett */
+.home-logo {
+  flex: none;
+  width: clamp(76px, 8vw, 104px);
+  height: auto;
+  filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.35));
+}
+
 .home-brand h1 {
   max-width: 560px;
   margin: 12px 0 0;
   color: #e7c783;
   font-family: 'Parisienne', 'Cormorant Garamond', cursive;
-  font-size: clamp(60px, 6.7vw, 84px);
+  font-size: clamp(44px, 4.6vw, 62px);
   font-weight: 400;
   letter-spacing: 0;
-  line-height: 1.1;
-  /* arany csillanás fut végig a feliraton; a padding, hogy a kézírás kacskaringói is kapjanak színt */
+  line-height: 1.2; /* ha két sorba törik, a felső sor szárai ne lógjanak az alsóba */
+  /* arany csillanás fut végig a feliraton; a padding, hogy a kézírás kacskaringói is kapjanak színt.
+     Alul csak részben húzzuk vissza, így a lelógó szárak (g, y, ó) nem érnek bele a szlogenbe. */
   padding: 0 0.3em 0.45em 0.2em;
   margin-right: -0.3em;
-  margin-bottom: -0.45em;
+  margin-bottom: -0.22em;
   margin-left: -0.2em;
   background: linear-gradient(110deg, #e7c783 42%, #fff4d6 50%, #e7c783 58%) 100% 0 / 260% 100% no-repeat;
   -webkit-background-clip: text;
@@ -532,6 +545,14 @@
 
 .lobby-heading {
   text-align: center;
+}
+
+.lobby-logo {
+  display: block;
+  width: 84px;
+  height: auto;
+  margin: 0 auto 10px;
+  filter: drop-shadow(0 6px 12px rgba(97, 77, 43, 0.25));
 }
 
 .lobby-eyebrow {
@@ -833,7 +854,7 @@
 
   .home-brand h1 {
     margin-top: 14px;
-    font-size: 66px;
+    font-size: 50px;
   }
 
   .home-card {
@@ -858,7 +879,11 @@
   }
 
   .home-brand h1 {
-    font-size: 56px;
+    font-size: 40px;
+  }
+
+  .home-logo {
+    width: 62px;
   }
 
   .home-card {
