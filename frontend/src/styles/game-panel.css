@@ -204,3 +204,64 @@
 .build-list li.locked {
   color: #9aa7b2;
 }
+
+/* eseménykártya a panelen: fajta szerinti színcsík */
+.card-decision {
+  border-left: 4px solid #c9a865;
+}
+
+.card-decision.nyeremeny {
+  border-left-color: #5e8a6c;
+}
+
+.card-decision.veszteseg {
+  border-left-color: #b5574f;
+}
+
+.card-decision.elony {
+  border-left-color: #d2b06a;
+}
+
+.card-decision.hatrany {
+  border-left-color: #7f6aa0;
+}
+
+.card-decision .card-kind {
+  color: #7a8a97;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+}
+
+.card-decision .card-blocked {
+  color: #b5574f;
+  font-weight: 700;
+}
+
+/* Jósnő: a két lap képe, kattintva választható */
+.card-pick {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.game-panel .card-option {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 4px;
+  background: #ffffff;
+  color: #2b4a63;
+  font-size: 12px;
+  box-shadow: inset 0 0 0 1px #c9d6e0;
+}
+
+.game-panel .card-option:hover:not(:disabled) {
+  box-shadow: inset 0 0 0 2px #c9a865;
+}
+
+.card-option img {
+  width: 100%;
+  border-radius: 6px;
+}

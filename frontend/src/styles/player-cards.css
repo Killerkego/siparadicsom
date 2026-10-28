@@ -183,3 +183,23 @@
   background: linear-gradient(#e2c27a, #c9905a);
   box-shadow: 0 0 0 1px rgba(150, 100, 50, 0.2);
 }
+
+/* a kártyák függő hatásai */
+.player-card .effects {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  margin-top: 5px;
+}
+
+.player-card .effect {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  background: #f3e7d1;
+  box-shadow: inset 0 0 0 1px #e2cfae;
+  font-size: 12px;
+  cursor: default;
+}

@@ -1,6 +1,6 @@
-import { buildPrice, hk } from '../../game/format';
+import { hk } from '../../game/format';
 
-// a kör végi építkezés: legfeljebb egy elem, vásárlási mezőn kedvezménnyel
+// a kör végi építkezés: legfeljebb egy elem; az árat a szerver számolja (vásárlási mező, kártyák)
 export default function BuildDecision({ pending, buildings, busy, onChoose }) {
   const options = buildings.filter((b) => pending.options.includes(b.id));
   return (
@@ -15,7 +15,7 @@ export default function BuildDecision({ pending, buildings, busy, onChoose }) {
           <button key={b.id} disabled={busy} onClick={() => onChoose(b.id)}>
             {b.name}
             <span className="price">
-              {pending.discount > 0 && <s>{hk(b.price)}</s>} {hk(buildPrice(b, pending.discount))}
+              {pending.prices[b.id] !== b.price && <s>{hk(b.price)}</s>} {hk(pending.prices[b.id])}
             </span>
           </button>
         ))}

@@ -34,6 +34,9 @@ RULES = {
     "win_money": 5000,  # győzelemhez: minden elem megépítve és legalább ennyi pénz (tartozás nélkül)
     "loan_unit": 1000,  # pénzhiánynál a bank ennyinek a többszörösét adja kölcsön
     "loan_interest": 10,  # a felvett hitelre ennyi % kamat jön, ezt kell visszafizetni
+    "income_field": 1000,  # bevételi mezőn ennyit kap
+    "expense_field": 900,  # kiadási mezőn ennyit fizet (pénzhiánynál hitelből)
+    "weak_start_bonus": 1000,  # Gyenge árfolyam kártya után a START-on csak ennyi jár
 }
 
 # A felépítendő síparadicsom elemei. A játékos minden köre végén legfeljebb egyet vehet meg,
