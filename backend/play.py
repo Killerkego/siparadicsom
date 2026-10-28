@@ -3,6 +3,7 @@
 
 from fastapi import HTTPException
 
+import cards
 from actions import add_log, dice, dobott, jump, record_action, walk
 from config import BUILDING_BY_ID, BUILDINGS, FIELD_COUNT, RULES
 from fields import land
@@ -26,21 +27,57 @@ def roll(game: dict, player: dict) -> None:
             finish_turn(game, player)
             return
         player["in_school"] = False
-    moves.append(walk(game, player, value))
-    land(game, player, moves)
+    steps = modified_steps(game, player, value)
+    if steps:
+        moves.append(walk(game, player, steps))
+        land(game, player, moves)
     record_action(game, player, value, moves)
     if not game["pending"]:
         finish_turn(game, player)
 
 
+def modified_steps(game: dict, player: dict, value: int) -> int:
+    """A dobott érték kártyák után: Felvonósztrájk legfeljebb 3, Jegesedés -1 (0-nál helyben marad)."""
+    effects = player["effects"]
+    steps = value
+    if effects["max_move"]:
+        effects["max_move"] = 0
+        if steps > 3:
+            steps = 3
+            add_log(game, f"Felvonósztrájk: {player['name']} csak 3 mezőt léphet.")
+    if effects["roll_minus"]:
+        effects["roll_minus"] = 0
+        steps = max(0, steps - 1)
+        add_log(game, f"Jegesedés: {player['name']} dobásából 1-et le kell vonni, {steps} mezőt lép.")
+    return steps
+
+
 # --- döntések: mindegyik a játékos választását hajtja végre ---
+
+
+def after_card(game: dict, player: dict, result: str) -> None:
+    """A kártya után: új döntés vár, még egyszer dobhat, vagy jön a kör vége."""
+    if result == "pending":
+        return
+    game["pending"] = None
+    if result != "again":
+        finish_turn(game, player)
 
 
 def accept_card(game: dict, player: dict, pending: dict, choice: str) -> None:
     if choice != "ok":
         raise HTTPException(422, "A kártyát az OK gombbal lehet elfogadni.")
     game["pending"] = None
-    finish_turn(game, player)
+    after_card(game, player, cards.resolve(game, player, pending["card"], pending["blocked_by"]))
+
+
+def pick_card(game: dict, player: dict, pending: dict, choice: str) -> None:
+    """Jósnő: a két kihúzott lap közül az egyiket választja."""
+    if choice not in pending["options"]:
+        raise HTTPException(422, "Ezt a két lapot húztad, ezek közül választhatsz.")
+    other = next(c for c in pending["options"] if c != choice)
+    game["pending"] = None
+    after_card(game, player, cards.pick(game, player, choice, other))
 
 
 def choose_building(game: dict, player: dict, pending: dict, choice: str) -> None:
@@ -52,29 +89,33 @@ def choose_building(game: dict, player: dict, pending: dict, choice: str) -> Non
             raise HTTPException(422, "Nincs ilyen építési elem.")
         problem = build_problem(player, building, pending["discount"])
         if problem:
-            raise HTTPException(409, problem)
+            raise HTTPException(409, f"{building['name']}: {problem}")
         build(game, player, building, pending["discount"])
     close_turn(game, player)
 
 
 def gamble(game: dict, player: dict, pending: dict, choice: str) -> None:
+    """Bukásnál visszalép, és az új mező hatása is érvényesül: a tábla úgy van kirakva, hogy az
+    kiadási mező legyen, így a bukás mindig fáj."""
     name = player["name"]
+    if choice not in ("yes", "no"):
+        raise HTTPException(422, "Igen vagy nem?")
+    game["pending"] = None
     if choice == "no":
         add_log(game, f"{name} nem kockáztatott a gamblingon.")
-    elif choice == "yes":
+    else:
         value = dice()
         moves = []
         if value <= 3:
             moves.append(walk(game, player, -RULES["gamble_back"]))
             add_log(game, f"{name} kockáztatott, {dobott(value)}: bukta, {RULES['gamble_back']} mezőt vissza.")
+            land(game, player, moves)
         else:
             player["money"] += RULES["gamble_prize"]
             add_log(game, f"{name} kockáztatott, {dobott(value)}: nyert, +{RULES['gamble_prize']} HK.")
         record_action(game, player, value, moves)
-    else:
-        raise HTTPException(422, "Igen vagy nem?")
-    game["pending"] = None
-    finish_turn(game, player)
+    if not game["pending"]:
+        finish_turn(game, player)
 
 
 def ride_lift(game: dict, player: dict, pending: dict, choice: str) -> None:
@@ -104,6 +145,7 @@ def place_trap(game: dict, player: dict, pending: dict, choice: str) -> None:
 
 DECISIONS = {
     "card": accept_card,
+    "card_pick": pick_card,
     "build": choose_building,
     "gamble": gamble,
     "lift": ride_lift,

@@ -1,28 +1,72 @@
-"""A mezők hatása, ahová a bábu érkezett: kártyahúzás és a speciális mezők (oktatás, síverseny,
-gambling, felvonó, csapda). Ha a játékosnak döntenie kell, a játék `pending` mezőjébe kerül."""
+"""A mezők hatása, ahová a bábu érkezett: bevétel, kiadás, kártyahúzás és a speciális mezők
+(oktatás, síverseny, gambling, felvonó, csapda). Ha a játékosnak döntenie kell, a játék `pending`
+mezőjébe kerül."""
 
+import secrets
+
+import cards
 from actions import add_log, dice, pay, walk
 from config import BOARD, LIFTS, RULES
+from stories import FIELD_STORIES
 from store import find_player
 
 
 def land(game: dict, player: dict, moves: list[dict]) -> None:
     """Az érkezési mező hatása. A visszaléptetés (csapda) a `moves` listába kerül az animációhoz."""
-    pos = player["position"]
-    field = BOARD[pos]
-    if field["type"] == "kartya":
-        draw_card(game, player)
-    handler = SPECIAL_FIELDS.get(field.get("special"))
+    field = BOARD[player["position"]]
+    handler = FIELD_TYPES.get(field["type"]) or SPECIAL_FIELDS.get(field.get("special"))
     if handler:
         handler(game, player, moves)
 
 
-def draw_card(game: dict, player: dict) -> None:
-    """A kártyák tartalma később jön: most csak a húzás látszik, hatása nincs.
-    A lap addig marad a képernyőn, amíg a húzó játékos le nem okézza."""
-    game["card_draw"] = True
-    game["pending"] = {"type": "card", "player_id": player["id"]}
-    add_log(game, f"{player['name']} húzott egy kártyát.")
+def tell_story(game: dict, player: dict, amount: int, note: str) -> None:
+    """Kisorsol egy rövid történetet a mezőhöz (miért jön vagy megy a pénz); a böngészők a mozgás végén
+    mutatják. `amount`: pozitív bevétel, negatív kiadás; `note`: a kártyahatás magyarázata, ha volt."""
+    field = player["position"]
+    game["field_event"] = {
+        "seq": (game["field_event"] or {}).get("seq", 0) + 1,
+        "field": field,
+        "player_id": player["id"],
+        "amount": amount,
+        "story": secrets.choice(FIELD_STORIES[field]),
+        "note": note,
+    }
+
+
+def income(game: dict, player: dict, moves: list[dict]) -> None:
+    """Bevételi mező: fix összeg (Szezonnyitó buli után 50%-kal több)."""
+    amount = RULES["income_field"]
+    extra = ""
+    if player["effects"]["income_boost"]:
+        player["effects"]["income_boost"] -= 1
+        amount = amount * 3 // 2
+        extra = " (Szezonnyitó buli: +50%)"
+    player["money"] += amount
+    add_log(game, f"{player['name']} bevételi mezőre lépett: +{amount} HK{extra}.")
+    tell_story(game, player, amount, extra.strip(" ()"))
+
+
+def expense(game: dict, player: dict, moves: list[dict]) -> None:
+    """Kiadási mező: fix összeg (Könyvelő után a fele); ha nincs rá pénz, hitelből."""
+    amount = RULES["expense_field"]
+    extra = ""
+    if player["effects"]["expense_half"]:
+        player["effects"]["expense_half"] -= 1
+        amount //= 2
+        extra = " (Könyvelő: csak a fele)"
+    pay(game, player, amount)
+    add_log(game, f"{player['name']} kiadási mezőre lépett: -{amount} HK{extra}.")
+    tell_story(game, player, -amount, extra.strip(" ()"))
+
+
+def card(game: dict, player: dict, moves: list[dict]) -> None:
+    cards.draw(game, player)
+
+
+def shop(game: dict, player: dict, moves: list[dict]) -> None:
+    """Vásárlási mező: a kör végi építkezés kedvezményes. Csak dobással érkezve jár (a kártyával
+    elért mező hatása nem érvényesül), ezért itt jegyezzük fel, nem a kör végén a bábu helye alapján."""
+    game["shop_discount"] = player["id"]
 
 
 def school(game: dict, player: dict, moves: list[dict]) -> None:
@@ -35,19 +79,23 @@ def school(game: dict, player: dict, moves: list[dict]) -> None:
 
 
 def ski_race(game: dict, player: dict, moves: list[dict]) -> None:
-    """Síverseny: mindenki dob, a legmagasabb nyer; döntetlennél az élen állók újra dobnak."""
+    """Síverseny: mindenki dob, a legmagasabb nyer; döntetlennél az élen állók újra dobnak.
+    A dobási körök a mozgáshoz kerülnek (race_draw), így a böngészők a lépés után kockánként lejátsszák."""
     contenders = game["players"]
     rounds = []
+    texts = []
     while True:
         rolls = {p["id"]: dice() for p in contenders}
-        rounds.append(", ".join(f"{p['name']} {rolls[p['id']]}" for p in contenders))
+        rounds.append([{"player_id": p["id"], "value": rolls[p["id"]]} for p in contenders])
+        texts.append(", ".join(f"{p['name']} {rolls[p['id']]}" for p in contenders))
         best = max(rolls.values())
         contenders = [p for p in contenders if rolls[p["id"]] == best]
         if len(contenders) == 1:
             break
     winner = contenders[0]
     winner["money"] += RULES["race_prize"]
-    add_log(game, f"Síverseny! {' | '.join(rounds)} → {winner['name']} nyert, +{RULES['race_prize']} HK.")
+    game["race_draw"] = {"rounds": rounds, "winner_id": winner["id"], "prize": RULES["race_prize"]}
+    add_log(game, f"Síverseny! {' | '.join(texts)} → {winner['name']} nyert, +{RULES['race_prize']} HK.")
 
 
 def gambling(game: dict, player: dict, moves: list[dict]) -> None:
@@ -60,7 +108,8 @@ def lift(game: dict, player: dict, moves: list[dict]) -> None:
 
 
 def trap(game: dict, player: dict, moves: list[dict]) -> None:
-    """Más csapdájába lépve elsül (vissza vagy fizet); üres csapdamezőn a játékos rakhat le egyet."""
+    """Más csapdájába lépve elsül (vissza vagy fizet); üres csapdamezőn a játékos rakhat le egyet.
+    Visszalépésnél az új mező hatása is érvényesül: a tábla úgy van kirakva, hogy az kiadási mező legyen."""
     key = str(player["position"])
     placed = game["traps"].get(key)
     owner = placed and find_player(game, placed["owner"])
@@ -68,14 +117,30 @@ def trap(game: dict, player: dict, moves: list[dict]) -> None:
         game["pending"] = {"type": "trap", "player_id": player["id"]}
         return
     del game["traps"][key]
+    # a lerakó böngészője ebből tudja, hogy a mozgás végén értesítést mutasson
+    game["trap_event"] = {
+        "seq": (game["trap_event"] or {}).get("seq", 0) + 1,
+        "field": int(key),
+        "owner_id": owner["id"],
+        "victim_id": player["id"],
+        "kind": placed["kind"],
+    }
     if placed["kind"] == "back":
         moves.append(walk(game, player, -RULES["trap_back"]))
         add_log(game, f"{player['name']} {owner['name']} csapdájába lépett: {RULES['trap_back']} mezőt vissza.")
+        land(game, player, moves)
     else:
         pay(game, player, RULES["trap_money"])
         owner["money"] += RULES["trap_money"]
         add_log(game, f"{player['name']} {owner['name']} csapdájába lépett: {RULES['trap_money']} HK-t fizet neki.")
 
+
+FIELD_TYPES = {
+    "bevetel": income,
+    "kiadas": expense,
+    "kartya": card,
+    "vasarlas": shop,
+}
 
 SPECIAL_FIELDS = {
     "oktatas": school,

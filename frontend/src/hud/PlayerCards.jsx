@@ -1,6 +1,24 @@
 import { FIGURES } from '../game/figures';
-import { hk } from '../game/format';
+import { EFFECT_LABELS, hk } from '../game/format';
 import { usePortraits } from '../game/portraits';
+
+// a kártyák függő hatásai kis jelvényekként; rámutatva látszik a magyarázat
+function Effects({ effects }) {
+  const active = Object.entries(effects ?? {}).filter(([key, n]) => n && EFFECT_LABELS[key]);
+  if (!active.length) return null;
+  return (
+    <div className="effects">
+      {active.map(([key, n]) => {
+        const [icon, describe] = EFFECT_LABELS[key];
+        return (
+          <span key={key} className="effect" title={describe(n)}>
+            {icon}
+          </span>
+        );
+      })}
+    </div>
+  );
+}
 
 // Játékoskártyák a bal felső sarokban: bábu portréja, egyenleg, hitel és az építkezés állása.
 // A kártya a tábla keretét idézi: fenyőfa csík, aranyvonal, alul festett rombuszlánc.
@@ -25,10 +43,11 @@ export default function PlayerCards({ players, buildings, turnPlayerId, playerId
                   {p.id === playerId && <span className="me"> (te)</span>}
                 </b>
                 <span className="where">
+                  {p.bot && 'Gépi · '}
                   {figure.name} · {fieldLabel(p)}
                 </span>
               </div>
-              {turn && <span className="badge">Következik</span>}
+              {turn && <span className="badge">Soron</span>}
             </div>
             <dl className="stats">
               <dt>Egyenleg</dt>
@@ -46,6 +65,7 @@ export default function PlayerCards({ players, buildings, turnPlayerId, playerId
                 {built}/{buildings.length}
               </b>
             </div>
+            <Effects effects={p.effects} />
           </div>
         );
       })}

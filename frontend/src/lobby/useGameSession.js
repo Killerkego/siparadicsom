@@ -1,8 +1,22 @@
 import { useCallback, useEffect, useState } from 'react';
-import { chooseFigure, chooseOption, createGame, devBuildAll, devMove, joinGame, leaveGame, rollDice, startGame } from './api';
+import {
+  addBot,
+  chooseFigure,
+  chooseOption,
+  createGame,
+  devBuildAll,
+  devMove,
+  joinGame,
+  leaveGame,
+  removeBot,
+  rollDice,
+  setVisibility,
+  startGame,
+} from './api';
 
 // sessionStorage: oldalfrissítés után is megmarad, de böngészőfülenként külön játékos lehet
 const STORAGE_KEY = 'siparadicsom-session';
+const NAME_KEY = 'siparadicsom-name'; // a kezdőlapon megadott név; a lobbik oldala és kilépés után is megmarad
 const RECONNECT_DELAY = 2000;
 
 function loadSession() {
@@ -16,6 +30,7 @@ function loadSession() {
 // A játékos melyik játékban van ({ code, playerId }), és a játék élő állapota a szervertől.
 export function useGameSession() {
   const [session, setSession] = useState(loadSession);
+  const [name, setNameState] = useState(() => sessionStorage.getItem(NAME_KEY) ?? '');
   const [game, setGameState] = useState(null);
   const [retry, setRetry] = useState(0);
 
@@ -54,12 +69,22 @@ export function useGameSession() {
     saveSession({ code: result.game.code, playerId: result.player_id });
   };
 
+  const setName = (value) => {
+    sessionStorage.setItem(NAME_KEY, value);
+    setNameState(value);
+  };
+
   return {
     session,
     game,
-    create: async (name) => enter(await createGame(name)),
+    name,
+    setName,
+    create: async (name, isPublic) => enter(await createGame(name, isPublic)),
     join: async (code, name) => enter(await joinGame(code, name)),
     // a válaszból azonnal frissül, nem kell megvárni a WebSocket üzenetet
+    setPublic: async (isPublic) => setGame(await setVisibility(session.code, session.playerId, isPublic)),
+    addBot: async () => setGame(await addBot(session.code, session.playerId)),
+    removeBot: async (botId) => setGame(await removeBot(session.code, session.playerId, botId)),
     pickFigure: async (figure) => setGame(await chooseFigure(session.code, session.playerId, figure)),
     start: async () => setGame(await startGame(session.code, session.playerId)),
     roll: async () => setGame(await rollDice(session.code, session.playerId)),

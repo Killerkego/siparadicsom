@@ -130,10 +130,11 @@ export default function LoadingScreen({ waiting = false, ready = false, message 
       <div className="loading-snow far" aria-hidden="true" />
       <div className="loading-snow near" aria-hidden="true" />
       <div className="loading-card">
+        <img className="loading-logo" src="/logo.png" alt="" aria-hidden="true" />
         <p className="loading-eyebrow">
-          <span aria-hidden="true">✦</span> ALPINE CLUB · AURELIA RESORT <span aria-hidden="true">✦</span>
+          <span aria-hidden="true">✦</span> ALPESI ÜDÜLŐ · ÖTCSILLAGOS SZÁLLÓ <span aria-hidden="true">✦</span>
         </p>
-        <h1>Síparadicsom</h1>
+        <h1>Aranyhegy Szálló</h1>
         <p className="loading-step">{message ?? (done ? 'Indul a szezon!' : stepText(item, progress >= 100))}</p>
 
         <div className="loading-slope">
