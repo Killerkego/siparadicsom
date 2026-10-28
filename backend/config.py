@@ -3,7 +3,7 @@
 import json
 from pathlib import Path
 
-MIN_PLAYERS = 1  # tesztelés miatt egyedül is indítható; a kész játékhoz állítsd 2-re
+MIN_PLAYERS = 2  # a feladatleírás szerint 2–4 játékos; egyedüli kipróbáláshoz átmenetileg 1
 MAX_PLAYERS = 4
 DEV_MODE = False  # fejlesztői fül a játékban (bárhova lépés, minden épület); teszteléshez állítsd True-ra
 CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"  # nincs benne 0/O és 1/I, hogy ne lehessen összekeverni
@@ -20,37 +20,41 @@ FIELD_COUNT = len(BOARD)
 LIFTS = [f["id"] for f in BOARD if f.get("special") == "felvono"]
 
 # Szabályok, pénz: Hókristály Kredit (HK). A frontend is innen veszi az összegeket.
+# Az egyensúlyt szimulációval hangoltuk (TESZTELES.md): egy játék 2 fővel kb. 74, 4 fővel kb. 62 kör,
+# a kezdés sorrendje alig számít, és a mezők aránya a kártyákéhoz igazodik (jó lap átl. ~2100 HK,
+# rossz lap ~1550 HK). A START és a hozzá kötött kártyák (Helikopter, Gyenge árfolyam) összege a
+# kártyaképeken is szerepel, ezért az maradt 2000.
 RULES = {
-    "start_money": 6000,
+    "start_money": 10000,  # a teljes építkezés 24%-a
     "start_bonus": 2000,  # a START-on áthaladva vagy rálépve
-    "race_prize": 1000,  # síverseny győztesének a banktól
-    "gamble_prize": 1500,  # gambling: 4-5-6 dobásnál
-    "gamble_back": 5,  # gambling: 1-2-3 dobásnál ennyi mezőt vissza
+    "race_prize": 1500,  # síverseny győztesének a banktól
+    "gamble_prize": 2000,  # gambling: 4-5-6 dobásnál
+    "gamble_back": 5,  # gambling: 1-2-3 dobásnál ennyi mezőt vissza (mindig kiadási mezőre)
     "lift_cost": 500,  # felvonó: ennyiért visz át egy másik felvonóhoz
-    "school_pay": 300,  # oktatás: amíg nem dob párosat, minden köre elején ennyit kap
-    "trap_back": 3,  # csapda: ennyi mezőt vissza
-    "trap_money": 800,  # csapda: ennyit fizet a csapda lerakójának
+    "school_pay": 500,  # oktatás: amíg nem dob párosat, minden köre elején ennyit kap
+    "trap_back": 3,  # csapda: ennyi mezőt vissza (mindig kiadási mezőre)
+    "trap_money": 1000,  # csapda: ennyit fizet a csapda lerakójának
     "shop_discount": 30,  # vásárlási mezőn ennyi % kedvezmény az aznapi építkezésre
-    "win_money": 5000,  # győzelemhez: minden elem megépítve és legalább ennyi pénz (tartozás nélkül)
+    "win_money": 7000,  # győzelemhez: minden elem megépítve és legalább ennyi pénz (tartozás nélkül)
     "loan_unit": 1000,  # pénzhiánynál a bank ennyinek a többszörösét adja kölcsön
     "loan_interest": 10,  # a felvett hitelre ennyi % kamat jön, ezt kell visszafizetni
-    "income_field": 1000,  # bevételi mezőn ennyit kap
-    "expense_field": 900,  # kiadási mezőn ennyit fizet (pénzhiánynál hitelből)
+    "income_field": 2200,  # bevételi mezőn ennyit kap
+    "expense_field": 1300,  # kiadási mezőn ennyit fizet (pénzhiánynál hitelből)
     "weak_start_bonus": 1000,  # Gyenge árfolyam kártya után a START-on csak ennyi jár
 }
 
 # A felépítendő síparadicsom elemei. A játékos minden köre végén legfeljebb egyet vehet meg,
-# ha van rá pénze, megvannak az előfeltételei és még nincs meg neki. Összesen 26 000 HK,
-# a kezdőtőke ennek kb. 23%-a.
+# ha van rá pénze, megvannak az előfeltételei és még nincs meg neki. Összesen 42 000 HK,
+# a kezdőtőke ennek 24%-a.
 BUILDINGS = [
-    {"id": "palya", "name": "Pályarendszer", "price": 2000, "requires": []},
-    {"id": "szalloda", "name": "Szálloda", "price": 4500, "requires": []},
-    {"id": "felvono", "name": "Felvonó", "price": 3500, "requires": ["palya"]},
-    {"id": "etterem", "name": "Étterem", "price": 2500, "requires": ["szalloda"]},
-    {"id": "wellness", "name": "Wellness és spa", "price": 3500, "requires": ["szalloda"]},
-    {"id": "bar", "name": "Luxusbár", "price": 2500, "requires": ["etterem"]},
-    {"id": "lakosztaly", "name": "Luxus lakosztályok", "price": 4000, "requires": ["szalloda", "wellness"]},
-    {"id": "helipad", "name": "Helikopter-leszállópálya", "price": 3500, "requires": ["szalloda", "felvono"]},
+    {"id": "palya", "name": "Pályarendszer", "price": 3500, "requires": []},
+    {"id": "szalloda", "name": "Szálloda", "price": 7500, "requires": []},
+    {"id": "felvono", "name": "Felvonó", "price": 5500, "requires": ["palya"]},
+    {"id": "etterem", "name": "Étterem", "price": 4000, "requires": ["szalloda"]},
+    {"id": "wellness", "name": "Wellness és spa", "price": 5500, "requires": ["szalloda"]},
+    {"id": "bar", "name": "Luxusbár", "price": 4000, "requires": ["etterem"]},
+    {"id": "lakosztaly", "name": "Luxus lakosztályok", "price": 6500, "requires": ["szalloda", "wellness"]},
+    {"id": "helipad", "name": "Helikopter-leszállópálya", "price": 5500, "requires": ["szalloda", "felvono"]},
 ]
 BUILDING_BY_ID = {b["id"]: b for b in BUILDINGS}
 
