@@ -66,6 +66,7 @@ BUILDING_BY_ID = {b["id"]: b for b in BUILDINGS}
 DICE_MS = 1200
 STEP_MS = 300
 JUMP_MS = 900
+CARD_MS = 1300  # kártyahúzás a mozgás végén (a lap a kamera elé repül; ott marad, amíg le nem okézzák)
 
 
 def now_ms() -> int:
@@ -195,7 +196,7 @@ def add_log(game: dict, text: str) -> None:
 
 def action_duration(action: dict) -> int:
     moves = sum(JUMP_MS if m["type"] == "jump" else abs(m["steps"]) * STEP_MS for m in action["moves"])
-    return (DICE_MS if action["dice"] else 0) + moves
+    return (DICE_MS if action["dice"] else 0) + moves + (CARD_MS if action.get("card") else 0)
 
 
 def animating(game: dict) -> bool:
@@ -213,6 +214,7 @@ def record_action(game: dict, player: dict, dice_value: int | None, moves: list[
         "player_id": player["id"],
         "dice": dice_value,
         "moves": moves,
+        "card": game.pop("card_draw", False),  # a mozgás végén kártyát húz (animáció)
     }
 
 
@@ -317,6 +319,12 @@ def land(game: dict, player: dict, moves: list[dict]) -> None:
     pos = player["position"]
     special = BOARD[pos].get("special")
     name = player["name"]
+    if BOARD[pos]["type"] == "kartya":
+        # a kártyák tartalma később jön: most csak a húzás látszik, hatása nincs;
+        # a lap addig marad a képernyőn, amíg a húzó játékos le nem okézza
+        game["card_draw"] = True
+        game["pending"] = {"type": "card", "player_id": player["id"]}
+        add_log(game, f"{name} húzott egy kártyát.")
     if special == "oktatas":
         player["in_school"] = True
         add_log(game, f"{name} oktatásra került: páros dobással mehet tovább, addig minden körben +{RULES['school_pay']} HK.")
@@ -469,6 +477,14 @@ async def choose(code: str, body: ChoiceIn):
         raise HTTPException(409, "Most nincs mit eldönteni.")
     name = player["name"]
     choice = body.choice
+
+    if pending["type"] == "card":
+        if choice != "ok":
+            raise HTTPException(422, "A kártyát az OK gombbal lehet elfogadni.")
+        game["pending"] = None
+        finish_turn(game, player)
+        await broadcast(game)
+        return public_state(game)
 
     if pending["type"] == "build":
         if choice == "no":

@@ -6,17 +6,18 @@ import Scenery from '../scenery/Scenery';
 import Sky, { HORIZON_COLOR } from '../scenery/Sky';
 import BuildSite from './BuildSite';
 import DevPanel from './DevPanel';
+import CardDeck from './CardDeck';
 import Dice from './Dice';
 import { FIGURES } from './figures';
 import PlayerCards from './PlayerCards';
 import { usePortraits } from './portraits';
 import Pawn from './Pawn';
-import { DICE_TIME, actionEnd, actionStart, shownField } from './timing';
+import { DICE_TIME, actionEnd, actionStart, cardStart, shownField } from './timing';
 import { FIELD_TYPES, SPECIAL_TYPES } from '../board/fieldTypes';
 import boardData from '../data/board.json';
 
 const fields = boardData.fields;
-const DECISIONS = { gamble: 'Gambling', lift: 'Felvonó', trap: 'Csapda', build: 'Építkezés' };
+const DECISIONS = { gamble: 'Gambling', lift: 'Felvonó', trap: 'Csapda', build: 'Építkezés', card: 'Kártya' };
 
 const hk = (n) => `${n.toLocaleString('hu-HU')} HK`;
 
@@ -102,6 +103,19 @@ function BuildList({ buildings, owned }) {
 
 // a speciális mezőn hozott döntés gombjai; csak annál látszik, aki a mezőre lépett
 function Decision({ pending, rules, buildings, me, busy, onChoose }) {
+  if (pending.type === 'card') {
+    return (
+      <div className="decision">
+        <b>Kártyát húztál</b>
+        <p>A kártyák tartalma hamarosan jön. Fogadd el a lapot (gombbal vagy a lapra kattintva).</p>
+        <div className="choices">
+          <button disabled={busy} onClick={() => onChoose('ok')}>
+            Rendben
+          </button>
+        </div>
+      </div>
+    );
+  }
   if (pending.type === 'build') return <BuildDecision pending={pending} buildings={buildings} busy={busy} onChoose={onChoose} />;
   if (pending.type === 'gamble') {
     return (
@@ -170,7 +184,7 @@ function GamePanel({ game, settled, playerId, phase, busy, action, error, onRoll
 
   let label = myTurn ? 'Dobás' : 'Várj a sorodra';
   if (phase === 'rolling') label = 'Gurul…';
-  else if (phase === 'moving') label = 'Lép…';
+  else if (phase === 'moving') label = action?.card && Date.now() >= cardStart(action, action.start) ? 'Kártyát húz…' : 'Lép…';
   else if (game.pending) label = `${turnPlayer?.name} dönt…`;
 
   return (
@@ -269,6 +283,10 @@ export default function GameScreen({ game, playerId, onRoll, onChoose, onLeave, 
   const side = Math.floor(focusField / 10);
   // a középen látható építkezés is csak a mozgás végén frissül
   const settledMe = me && (settled.players.find((p) => p.id === me.id) ?? me);
+  const cardDraw = useMemo(
+    () => action?.card && { seq: action.seq, start: cardStart(action, action.start) },
+    [action],
+  );
   const diceRoll = useMemo(
     () => action?.dice && { value: action.dice, seq: action.seq, start: action.start },
     [action],
@@ -321,6 +339,11 @@ export default function GameScreen({ game, playerId, onRoll, onChoose, onLeave, 
         {fontsReady && <Board fields={fields} onHover={setHovered} />}
         <group rotation-y={(-side * Math.PI) / 2}>
           <Dice roll={diceRoll} disabled={busy || !myTurn || !!game.pending} onClick={rollDice} />
+          <CardDeck
+            draw={cardDraw}
+            held={game.pending?.type === 'card'}
+            onAck={game.pending?.type === 'card' && game.pending.player_id === playerId && !busy ? () => choose('ok') : null}
+          />
         </group>
         {settledMe && (
           <Suspense fallback={null}>

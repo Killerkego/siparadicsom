@@ -6,7 +6,7 @@ import { DICE_TIME } from './timing';
 
 const SIZE = 0.7;
 // az építkezés kis terén, elöl középen (a csoportja az üdülővel együtt a kamera felé fordul)
-const REST = new THREE.Vector3(0, SIZE / 2 + 0.06, 2.3);
+const REST = new THREE.Vector3(-0.45, SIZE / 2 + 0.06, 2.3); // jobbra mellette a kártyapakli
 const TAU = Math.PI * 2;
 
 // pöttyök helye a lapon (0..1 koordinátákban)
