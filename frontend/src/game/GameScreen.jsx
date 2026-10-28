@@ -8,6 +8,8 @@ import BuildSite from './BuildSite';
 import DevPanel from './DevPanel';
 import Dice from './Dice';
 import { FIGURES } from './figures';
+import PlayerCards from './PlayerCards';
+import { usePortraits } from './portraits';
 import Pawn from './Pawn';
 import { DICE_TIME, actionEnd, actionStart, shownField } from './timing';
 import { FIELD_TYPES, SPECIAL_TYPES } from '../board/fieldTypes';
@@ -29,13 +31,8 @@ function useFontsReady() {
   return ready;
 }
 
-function FieldName({ field }) {
-  return (
-    <>
-      <b>#{field.id}</b> {FIELD_TYPES[field.type].label}
-      {field.special && ` – ${SPECIAL_TYPES[field.special]}`}
-    </>
-  );
+function fieldName(field) {
+  return `#${field.id} ${FIELD_TYPES[field.type].label}${field.special ? ` – ${SPECIAL_TYPES[field.special]}` : ''}`;
 }
 
 function buildPrice(building, discount) {
@@ -161,7 +158,7 @@ function Decision({ pending, rules, buildings, me, busy, onChoose }) {
   );
 }
 
-function GamePanel({ game, settled, playerId, fieldOf, phase, busy, action, error, onRoll, onChoose, onLeave }) {
+function GamePanel({ game, settled, playerId, phase, busy, action, error, onRoll, onChoose, onLeave }) {
   const myTurn = game.turn_player_id === playerId;
   const turnPlayer = game.players.find((p) => p.id === game.turn_player_id);
   const me = game.players.find((p) => p.id === playerId);
@@ -195,27 +192,6 @@ function GamePanel({ game, settled, playerId, fieldOf, phase, busy, action, erro
       <div>
         Dobott szám: <b>{action?.dice && phase !== 'rolling' ? `${action.dice} (${roller?.name ?? '?'})` : '–'}</b>
       </div>
-      <ul className="panel-players">
-        {game.players.map((p) => {
-          const s = settledPlayer(p);
-          return (
-            <li key={p.id} className={p.id === game.turn_player_id ? 'turn' : ''}>
-              <span className="dot" style={{ background: p.color }} />
-              <span>
-                <span title={FIGURES[p.figure].name}>{FIGURES[p.figure].icon}</span> {p.name}
-                {p.id === playerId && ' (te)'}: <FieldName field={fields[fieldOf(p)]} />
-                <br />
-                <span className={s.money < 0 ? 'money debt' : 'money'}>{hk(s.money)}</span>
-                {s.in_school && ' · oktatáson'}
-                {' · '}
-                <span title={s.buildings.map((id) => game.buildings.find((b) => b.id === id)?.name).join(', ')}>
-                  🏗 {s.buildings.length}/{game.buildings.length}
-                </span>
-              </span>
-            </li>
-          );
-        })}
-      </ul>
       {me && <BuildList buildings={game.buildings} owned={settledPlayer(me).buildings} />}
       {Object.keys(settled.traps).length > 0 && (
         <div className="traps">
@@ -365,11 +341,17 @@ export default function GameScreen({ game, playerId, onRoll, onChoose, onLeave, 
           ))}
         </Suspense>
       </Canvas>
+      <PlayerCards
+        players={settled.players}
+        buildings={game.buildings}
+        turnPlayerId={game.turn_player_id}
+        playerId={playerId}
+        fieldLabel={(p) => fieldName(fields[fieldOf(game.players.find((g) => g.id === p.id) ?? p)])}
+      />
       <GamePanel
         game={game}
         settled={settled}
         playerId={playerId}
-        fieldOf={fieldOf}
         phase={phase}
         busy={busy}
         action={action}
@@ -397,12 +379,17 @@ export default function GameScreen({ game, playerId, onRoll, onChoose, onLeave, 
 
 // a játék vége: a győztes, a figurája és a felépült síparadicsom; további lépés már nincs
 function Victory({ game, playerId, onLeave }) {
+  const portraits = usePortraits();
   const winner = game.players.find((p) => p.id === game.winner_id);
   if (!winner) return null;
   return (
     <div className="victory">
       <div className="victory-card">
-        <div className="trophy">🏆</div>
+        {portraits[winner.figure] ? (
+          <img className="winner-portrait" src={portraits[winner.figure]} alt={FIGURES[winner.figure].name} />
+        ) : (
+          <div className="trophy">🏆</div>
+        )}
         <h2>{winner.id === playerId ? 'Nyertél!' : `${winner.name} nyert!`}</h2>
         <p>
           <span className="dot" style={{ background: winner.color }} /> {winner.name} · {FIGURES[winner.figure].icon} {FIGURES[winner.figure].name}

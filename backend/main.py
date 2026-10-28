@@ -43,6 +43,8 @@ RULES = {
     "trap_money": 800,  # csapda: ennyit fizet a csapda lerakójának
     "shop_discount": 30,  # vásárlási mezőn ennyi % kedvezmény az aznapi építkezésre
     "win_money": 5000,  # győzelemhez: minden elem megépítve és legalább ennyi pénz (tartozás nélkül)
+    "loan_unit": 1000,  # pénzhiánynál a bank ennyinek a többszörösét adja kölcsön
+    "loan_interest": 10,  # a felvett hitelre ennyi % kamat jön, ezt kell visszafizetni
 }
 
 # A felépítendő síparadicsom elemei. A játékos minden köre végén legfeljebb egyet vehet meg,
@@ -131,6 +133,7 @@ def new_player(game: dict | None, name: str) -> dict:
         "money": RULES["start_money"],
         "in_school": False,
         "buildings": [],  # a megépített elemek azonosítói, vásárlási sorrendben
+        "loan": 0,  # a banknak tartozott összeg kamattal; a START-on törleszt, hitellel nem lehet nyerni
     }
 
 
@@ -219,8 +222,33 @@ def walk(game: dict, player: dict, steps: int) -> dict:
     if steps > 0 and start + steps >= FIELD_COUNT:
         player["money"] += RULES["start_bonus"]
         add_log(game, f"{player['name']} áthaladt a START-on: +{RULES['start_bonus']} HK.")
+        repay_loan(game, player)
     player["position"] = (start + steps) % FIELD_COUNT
     return {"type": "walk", "from": start, "steps": steps}
+
+
+def pay(game: dict, player: dict, amount: int) -> None:
+    """Kötelező fizetés. Ha nincs rá elég pénz, a bank kölcsönad (loan_unit egységekben, kamattal),
+    így a játékos sosem kerül megoldhatatlan helyzetbe."""
+    if player["money"] < amount:
+        unit = RULES["loan_unit"]
+        borrowed = -(-(amount - player["money"]) // unit) * unit
+        owed = borrowed * (100 + RULES["loan_interest"]) // 100
+        player["money"] += borrowed
+        player["loan"] += owed
+        add_log(game, f"{player['name']} hitelt vett fel: +{borrowed} HK, {owed} HK-t kell visszafizetnie.")
+    player["money"] -= amount
+
+
+def repay_loan(game: dict, player: dict) -> None:
+    """A START-on a bank visszaveszi a hitelt, amennyit a játékos pénze fedez."""
+    amount = min(player["loan"], player["money"])
+    if amount <= 0:
+        return
+    player["money"] -= amount
+    player["loan"] -= amount
+    rest = f", még {player['loan']} HK hitel maradt" if player["loan"] else ", a hitel rendezve"
+    add_log(game, f"{player['name']} törlesztett {amount} HK-t{rest}.")
 
 
 def end_turn(game: dict) -> None:
@@ -259,7 +287,7 @@ def finish_turn(game: dict, player: dict) -> None:
 
 def close_turn(game: dict, player: dict) -> None:
     """Győzelem ellenőrzése a kör végén, utána körváltás."""
-    if len(player["buildings"]) == len(BUILDINGS) and player["money"] >= RULES["win_money"]:
+    if len(player["buildings"]) == len(BUILDINGS) and player["money"] >= RULES["win_money"] and not player["loan"]:
         game["status"] = "finished"
         game["winner_id"] = player["id"]
         game["pending"] = None
@@ -307,7 +335,7 @@ def land(game: dict, player: dict, moves: list[dict]) -> None:
                 moves.append(walk(game, player, -RULES["trap_back"]))
                 add_log(game, f"{name} {owner['name']} csapdájába lépett: {RULES['trap_back']} mezőt vissza.")
             else:
-                player["money"] -= RULES["trap_money"]
+                pay(game, player, RULES["trap_money"])
                 owner["money"] += RULES["trap_money"]
                 add_log(game, f"{name} {owner['name']} csapdájába lépett: {RULES['trap_money']} HK-t fizet neki.")
         else:
