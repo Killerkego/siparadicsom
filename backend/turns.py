@@ -135,8 +135,28 @@ def next_player(game: dict) -> None:
         game["turn"] = (game["turn"] + 1) % len(players)
         if game["turn"] == 0:
             seasons.new_round(game)
-        player = players[game["turn"]]
-        if not player["effects"]["skip_turns"]:
+        if not skips(game):
             return
-        player["effects"]["skip_turns"] -= 1
-        add_log(game, f"{player['name']} kimarad ebből a körből.")
+
+
+def skips(game: dict) -> bool:
+    """Kimarad-e a soron lévő játékos (kártya miatt); ha igen, a kimaradása fogy."""
+    player = game["players"][game["turn"]]
+    if not player["effects"]["skip_turns"]:
+        return False
+    player["effects"]["skip_turns"] -= 1
+    add_log(game, f"{player['name']} kimarad ebből a körből.")
+    return True
+
+
+def current_left(game: dict, index: int) -> None:
+    """A soron lévő játékos kilépett (`index` volt a helye, már nincs a listában): az utána ülő jön,
+    ugyanúgy, mint egy szokásos körváltásnál. Ha ő volt az utolsó, körbeértünk, és új kör indul;
+    aki kártya miatt kimarad, azt átugorjuk."""
+    players = game["players"]
+    game["shop_discount"] = None
+    game["turn"] = index % len(players)
+    if index == len(players):
+        seasons.new_round(game)
+    if skips(game):
+        next_player(game)

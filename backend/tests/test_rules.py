@@ -14,6 +14,7 @@ import cards
 import fields
 import main
 import play
+import seasons
 from actions import action_duration, record_action
 from config import BOARD, BUILDING_BY_ID, BUILDINGS, FIELD_COUNT, MAX_PLAYERS, RACE_ROUND_MS, RULES
 from stories import FIELD_STORIES
@@ -837,6 +838,59 @@ class EdgeCaseTests(unittest.TestCase):
         game, ids = new_game(3)
         run(main.leave_game(game["code"], PlayerRef(player_id=ids[2])))
         self.assertEqual(game["status"], "playing")
+
+
+    def leave(self, game, player_id):
+        run(main.leave_game(game["code"], PlayerRef(player_id=player_id)))
+
+    def test_last_in_order_leaving_on_their_turn_starts_a_new_round(self):
+        game, ids = new_game(3)
+        game["turn"] = 2
+        self.leave(game, ids[2])
+        self.assertEqual(game["turn"], 0)
+        self.assertEqual(game["round"], 2, "körbeértünk, ez új kör")
+
+    def test_leaving_on_their_turn_mid_round_keeps_the_round(self):
+        for index in (0, 1):
+            with self.subTest(index=index):
+                game, ids = new_game(3)
+                game["turn"] = index
+                self.leave(game, ids[index])
+                self.assertEqual(current(game)["id"], ids[index + 1], "az utána ülő jön")
+                self.assertEqual(game["round"], 1)
+
+    def test_leaving_on_their_turn_skips_a_player_who_must_sit_out(self):
+        game, ids = new_game(3)
+        game["turn"] = 0
+        game["players"][1]["effects"]["skip_turns"] = 1
+        self.leave(game, ids[0])
+        self.assertEqual(current(game)["id"], ids[2])
+        self.assertEqual(game["players"][0]["effects"]["skip_turns"], 0, "a kimaradás elfogyott")
+
+    def test_last_leaving_skips_the_first_player_who_must_sit_out(self):
+        game, ids = new_game(3)
+        game["turn"] = 2
+        game["players"][0]["effects"]["skip_turns"] = 1
+        self.leave(game, ids[2])
+        self.assertEqual(current(game)["id"], ids[1])
+        self.assertEqual(game["round"], 2)
+
+    def test_leaving_out_of_turn_keeps_the_current_player(self):
+        game, ids = new_game(4)
+        game["turn"] = 2
+        self.leave(game, ids[0])
+        self.assertEqual(current(game)["id"], ids[2])
+        self.leave(game, ids[3])
+        self.assertEqual(current(game)["id"], ids[2])
+        self.assertEqual(game["round"], 1)
+
+    def test_season_ends_on_time_even_if_someone_leaves(self):
+        game, ids = new_game(3)
+        seasons.start(game, "blizzard")
+        game["season"]["until"] = game["round"]  # csak ebben a körben tart
+        game["turn"] = 2
+        self.leave(game, ids[2])
+        self.assertIsNone(game["season"], "a kilépéssel is véget ér a kör, és vele az esemény")
 
 
 if __name__ == "__main__":

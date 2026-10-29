@@ -29,7 +29,7 @@ from store import (
     public_lobbies,
     public_state,
 )
-from turns import acting_player
+from turns import acting_player, current_left
 
 app = FastAPI(title="Aranyhegy Szálló")
 
@@ -173,17 +173,22 @@ async def leave_game(code: str, body: PlayerRef):
             game["discard"].extend(pending["options"])
         game["pending"] = None
     game["traps"] = {f: t for f, t in game["traps"].items() if t["owner"] != body.player_id}
-    # a kör annál marad, aki eddig is következett volna
-    if index < game["turn"]:
-        game["turn"] -= 1
-    game["turn"] %= len(game["players"])
     if game["status"] == "playing" and len(game["players"]) == 1:
         # egyedül nem lehet játszani: aki bent maradt, megnyeri a szezont
         last = game["players"][0]
+        game["turn"] = 0
         game["status"] = "finished"
         game["winner_id"] = last["id"]
         game["end_reason"] = "left"
         add_log(game, f"Mindenki más kilépett: {last['name']} nyerte a szezont.")
+    elif game["status"] == "playing" and index == game["turn"]:
+        # a soron lévő lépett ki: a következő jön (körváltás, kimaradás ugyanúgy, mint máskor)
+        current_left(game, index)
+    else:
+        # a kör annál marad, aki eddig is következett volna
+        if index < game["turn"]:
+            game["turn"] -= 1
+        game["turn"] %= len(game["players"])
     await updated(game)
     return {"ok": True}
 
