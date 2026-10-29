@@ -15,6 +15,9 @@ html,body{height:100%;margin:0}
 body{background:radial-gradient(ellipse at top,var(--bg1),var(--bg2));font-family:Nunito,"Segoe UI",Arial,sans-serif;color:var(--ink);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:10px;overflow:hidden}
 #book{position:relative;display:flex;width:min(96vw,800px);height:min(78vh,600px);filter:drop-shadow(0 14px 26px rgba(0,0,0,.35));perspective:2200px;transition:transform .85s cubic-bezier(.45,.05,.25,1)}
 #book.solo{justify-content:flex-end;transform:translateX(-25%)}
+#book.solo-end{justify-content:flex-start;transform:translateX(25%)}
+.pg.blank .in{display:flex;align-items:center;justify-content:center}
+.pg.blank .orn{opacity:.45;letter-spacing:10px}
 .pg{display:none;position:absolute;top:0;left:0;width:50%;height:100%;background:var(--paper);overflow:hidden}
 .pg.on{display:block}
 .pg.L{box-shadow:-3px 2px 0 #ece3cb,-6px 4px 0 #e0d4b6;border-radius:10px 2px 2px 10px;background:linear-gradient(90deg,var(--paper) 90%,#eee4cc)}
@@ -111,7 +114,8 @@ p{margin:5px 0}
 <div class="step"><div class="n">1</div><div><b>Dobás</b><br>Dobj egy kockával (1–6), a bábu ennyit lép előre. Hitelt dobás előtt törleszthetsz.</div></div>
 <div class="step"><div class="n">2</div><div><b>Mező hatása</b><br>Érvényesül annak a mezőnek a hatása, ahová érkeztél.</div></div>
 <div class="step"><div class="n">3</div><div><b>Építkezés</b><br>START után előbb a bank levonja a hitelt. Utána legfeljebb egy épületet vehetsz, ha van rá pénzed, és megvannak az előfeltételei.</div></div>
-<div class="step"><div class="n">4</div><div><b>Ellenőrzés</b><br>Ellenőrzés, hogy nyertél-e, utána a következő játékos jön.</div></div></div><div class="num">4</div></section>
+<div class="step"><div class="n">4</div><div><b>Ellenőrzés</b><br>Ellenőrzés, hogy nyertél-e, utána a következő játékos jön.</div></div>
+<div class="note">Ha mindenki sorra került, új kör kezdődik: ilyenkor indulhat vagy érhet véget egy <b>szezonesemény</b> (9. oldal).</div></div><div class="num">4</div></section>
 
 <!-- 5 ÉPÜLETEK -->
 <section class="pg"><div class="in"><div class="eb">✦ Építkezésem ✦</div><h2>Épületek</h2><div class="orn">✦</div>
@@ -139,12 +143,12 @@ p{margin:5px 0}
 
 <!-- 7 MEZŐK I -->
 <section class="pg"><div class="in"><div class="eb">✦ A tábla ✦</div><h2>Mezők I.</h2><div class="orn">✦</div>
-<div class="tile"><div class="chip" style="background:#1f6b3a">Bevételi<br>7 db</div><div><span class="pos">+2200 HK</span></div></div>
-<div class="tile"><div class="chip" style="background:#9b1c2e">Kiadási<br>7 db</div><div><span class="neg">−1300 HK</span> (ha nincs rá pénzed, hitelből)</div></div>
+<div class="tile"><div class="chip" style="background:#1f6b3a">Bevételi<br>7 db</div><div><span class="pos">+2200 HK</span> (Csúcsszezonban +50%)</div></div>
+<div class="tile"><div class="chip" style="background:#9b1c2e">Kiadási<br>7 db</div><div><span class="neg">−1300 HK</span>, Ellenőrzéskor +50% (ha nincs rá pénzed, hitelből)</div></div>
 <div class="tile"><div class="chip" style="background:#5a2a6b">Kártyahúzó<br>6 db</div><div>Húzol egy eseménykártyát.</div></div>
 <div class="tile"><div class="chip" style="background:#a8672a">Vásárlási<br>4 db</div><div>Ebben a körben <b>−30%</b> az építkezésre.</div></div>
 <div class="tile"><div class="chip" style="background:#4b6b60">Semleges<br>4 db</div><div>Nincs hatása.</div></div>
-<div class="tile"><div class="chip" style="background:#17315e">Felvonó<br>4 db</div><div>500 HK-ért átmehetsz egy másik felvonó mezőre. Nem kötelező.</div></div>
+<div class="tile"><div class="chip" style="background:#17315e">Felvonó<br>4 db</div><div>500 HK-ért átmehetsz egy másik felvonó mezőre. Nem kötelező. Hóviharban zárva.</div></div>
 <div class="note">A visszaléptető mezőket úgy rakták ki, hogy a visszalépés mindig kiadási mezőre vigyen.</div></div><div class="num">7</div></section>
 
 <!-- 8 MEZŐK II -->
@@ -180,10 +184,13 @@ p{margin:5px 0}
 <div class="step"><div class="n">3</div><div>A kör végén megveszi a <b>Szállodát</b> 7500 HK-ért. Maradt 4700 HK.</div></div>
 <div class="step"><div class="n">4</div><div>Még nem nyert (kevés épület), jön a következő játékos.</div></div>
 <h3>Gyors emlékeztető</h3>
-<div class="note">Körönként legfeljebb 1 épület · Hitellel nem lehet nyerni · Kártya általi mozgásnál az érkezési mező hatása nem érvényesül.</div></div><div class="num">12</div></section>
+<div class="note">Körönként legfeljebb 1 épület · Hitellel nem lehet nyerni · Kártya általi mozgásnál az érkezési mező hatása nem érvényesül · Egyszerre csak egy szezonesemény tart.</div></div><div class="num">12</div></section>
 
 <!-- 13 ZÁRÓ -->
 <section class="pg"><div class="in" style="display:flex;flex-direction:column;justify-content:center;text-align:center"><div class="eb">✦ Találkozzunk a hegytetőn ✦</div><h2 style="font-family:'Great Vibes',cursive;font-size:46px;font-weight:400">Jó játékot!</h2><div class="orn">✦</div><p>Építs, gazdálkodj okosan, és légy te az első, akinek mind a 8 épülete áll, legalább 7000 HK van a zsebében, és egy fillér hitele sincs.</p><p class="cap">Aranyhegy Szálló · Öt csillag a felhők felett</p></div><div class="num">13</div></section>
+
+<!-- ÜRES ZÁRÓLAP: a „Jó játékot!” mellé, mint egy igazi könyv utolsó, üres oldala -->
+<section class="pg blank"><div class="in"><div class="orn">✦ ✦ ✦</div></div></section>
 
 <!-- 14 HÁTSÓ BORÍTÓ -->
 <section class="pg cover"><div class="tx" style="top:auto;bottom:0;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px"><svg viewBox="0 0 120 120" style="position:static;width:110px;height:110px;filter:drop-shadow(0 3px 6px rgba(0,0,0,.35))"><use href="#logo"/></svg><div class="t" style="font-size:40px">Aranyhegy Szálló</div><div class="eb">✦ Öt csillag a felhők felett ✦</div></div></section>
@@ -194,29 +201,31 @@ p{margin:5px 0}
 <script>
 (function(){
 var b=document.getElementById('book'),pg=[].slice.call(b.children),mq=window.matchMedia('(max-width:600px)'),v=0,prev=document.getElementById('prev'),next=document.getElementById('next'),ctr=document.getElementById('ctr');
-function views(){var a=[[0]];if(mq.matches){for(var i=1;i<pg.length;i++)a.push([i]);}else{for(var j=1;j<pg.length;j+=2)a.push([j,j+1]);}return a;}
+var last=pg.length-1,backCover=pg[last].classList.contains('cover');
+function views(){var a=[[0]];if(mq.matches){for(var i=1;i<pg.length;i++)if(!pg[i].classList.contains('blank'))a.push([i]);}else{var end=backCover?last:pg.length;for(var j=1;j<end;j+=2)a.push(j+1<end?[j,j+1]:[j]);if(backCover)a.push([last]);}return a;}
+function isBack(list){return backCover&&!mq.matches&&list.length===1&&list[0]===last;}
 var vs=views();
 function show(list){pg.forEach(function(p){p.classList.remove('on','L','R');});list.forEach(function(x){var p=pg[x[0]];if(p)p.classList.add('on',x[1]);});}
 function render(){
 vs=views();if(v>=vs.length)v=vs.length-1;
-var cur=vs[v];show(cur.map(function(i,k){return [i,(cur.length===1||mq.matches)?'R':(k===0?'L':'R')];}));
-b.classList.toggle('solo',cur.length===1);
+var cur=vs[v],end=isBack(cur);show(cur.map(function(i,k){return [i,end?'L':(cur.length===1||mq.matches)?'R':(k===0?'L':'R')];}));
+b.classList.toggle('solo',cur.length===1&&!end);b.classList.toggle('solo-end',end);
 prev.disabled=v===0;next.disabled=v===vs.length-1;ctr.textContent=(v+1)+" / "+vs.length;}
 function cl(i,c){var e=pg[i].cloneNode(true);e.classList.remove('L','R');e.classList.add('on',c);return e;}
-var busy=false;pg.slice(1).forEach(function(p){if(!p.classList.contains('cover'))p.insertAdjacentHTML('beforeend','<svg class="fl" viewBox="0 0 120 120"><use href="#logo"/></svg>');});
+var busy=false;pg.slice(1).forEach(function(p){if(!p.classList.contains('cover')&&!p.classList.contains('blank'))p.insertAdjacentHTML('beforeend','<svg class="fl" viewBox="0 0 120 120"><use href="#logo"/></svg>');});
 function go(d){
 var n=Math.max(0,Math.min(vs.length-1,v+d));if(n===v||busy)return;
 var cur=vs[v],nx=vs[n],fwd=d>0,front,back,side,a0,a1,ul=[];
 if(mq.matches){
 ul=[[fwd?nx[0]:cur[0],'R']];front=cl(fwd?cur[0]:nx[0],'R');back=document.createElement('section');back.className='pg on R';side='l';a0=fwd?0:-180;a1=fwd?-180:0;
 }else if(fwd){
-if(cur.length>1)ul.push([cur[0],'L']);ul.push([nx[nx.length-1],'R']);
+if(cur.length>1)ul.push([cur[0],'L']);if(nx.length>1)ul.push([nx[nx.length-1],'R']);
 front=cl(cur[cur.length-1],'R');back=cl(nx[0],'L');side='r';a0=0;a1=-180;
 }else{
-if(nx.length>1)ul.push([nx[0],'L']);ul.push([cur[cur.length-1],'R']);
+if(nx.length>1)ul.push([nx[0],'L']);if(cur.length>1)ul.push([cur[cur.length-1],'R']);
 front=cl(cur[0],'L');back=cl(nx[nx.length-1],'R');side='l';a0=0;a1=180;
 }
-show(ul);b.classList.remove('solo');
+show(ul);b.classList.remove('solo','solo-end');
 var lf=document.createElement('div');lf.className='leaf '+side;
 front.classList.add('f');back.classList.add('k');lf.appendChild(front);lf.appendChild(back);b.appendChild(lf);
 lf.style.transform='rotateY('+a0+'deg)';void lf.offsetWidth;
