@@ -17,6 +17,7 @@ from config import (
     MIN_PLAYERS,
     PAWN_COLORS,
     RULES,
+    SEASON_FIRST_ROUND,
 )
 
 # A játékok a memóriában vannak, a szerver újraindításakor elvesznek.
@@ -93,6 +94,12 @@ def new_game(host: dict, public: bool = False) -> dict:
         "shop_discount": None,  # aki ebben a körben dobással vásárlási mezőre lépett (kártyával nem jár)
         "deck": new_deck(),  # a húzópakli (a teteje az első elem); a kliens csak a darabszámot látja
         "discard": [],  # a már kihúzott lapok; ha a pakli elfogy, ezekből keverünk újat
+        # szezonesemények (seasons.py)
+        "round": 1,  # hányadik kör (mindenki egyszer következett)
+        "season": None,  # a futó szezonesemény: azonosító, név, leírás, meddig tart (kör)
+        "season_seq": 0,
+        "next_season": SEASON_FIRST_ROUND,  # ebben a körben jön a következő esemény
+        "last_season": None,  # az előző esemény (kétszer egymás után ugyanaz nem jön)
     }
     return games[code]
 
@@ -125,6 +132,8 @@ def public_state(game: dict) -> dict:
         "traps": game["traps"],
         "trap_event": game["trap_event"],
         "field_event": game["field_event"],
+        "round": game["round"],
+        "season": game["season"],
         "log": game["log"],
         "rules": RULES,
         "buildings": BUILDINGS,

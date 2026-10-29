@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { hk } from '../game/format';
 import BuildList from './BuildList';
 import { DECISION_NAMES } from './decisions/Decision';
+import { SeasonChip } from './Season';
 
 const COLLAPSED_KEY = 'siparadicsom.panelCollapsed';
 // a kocka pöttyei egy 3×3-as rácsban (balról jobbra, fentről le)
@@ -92,6 +93,7 @@ export default function GamePanel({ game, settled, playerId, timeline, viewedId,
       </header>
 
       <section className="panel-action">
+        <SeasonChip season={settled.season} round={settled.round} />
         {myTurn && me?.in_school && !game.pending && phase === 'idle' && (
           <div className="hint">Oktatáson vagy: páros dobással mehetsz tovább.</div>
         )}

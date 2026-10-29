@@ -37,3 +37,8 @@ class FigureIn(BaseModel):
 class DevMoveIn(BaseModel):
     player_id: str
     field: int
+
+
+class DevSeasonIn(BaseModel):
+    player_id: str
+    season: str  # "peak" / "blizzard" / "audit", vagy "none": a futó esemény vége

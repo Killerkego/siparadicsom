@@ -13,9 +13,10 @@ from fastapi.staticfiles import StaticFiles
 
 import bots
 import play
+import seasons
 from actions import add_log
 from config import DEV_MODE, FIGURE_COUNT, MAX_PLAYERS, MIN_PLAYERS
-from schemas import ChoiceIn, CreateIn, DevMoveIn, FigureIn, PlayerIn, PlayerRef, VisibilityIn
+from schemas import ChoiceIn, CreateIn, DevMoveIn, DevSeasonIn, FigureIn, PlayerIn, PlayerRef, VisibilityIn
 from store import (
     broadcast,
     connections,
@@ -238,6 +239,23 @@ async def dev_build_all(code: str, body: PlayerRef):
     if player is None:
         raise HTTPException(404, "Nincs ilyen játékos.")
     play.dev_build_all(game, player)
+    return await updated(game)
+
+
+@app.post("/api/games/{code}/dev/season")
+async def dev_season(code: str, body: DevSeasonIn):
+    """Szezonesemény azonnal (bemutatóhoz): a megadottat indítja, vagy "none"-ra a futót leállítja.
+    Amíg egy esemény tart, újat ez sem indíthat."""
+    require_dev()
+    game = get_game(code)
+    if find_player(game, body.player_id) is None:
+        raise HTTPException(404, "Nincs ilyen játékos.")
+    if body.season == "none":
+        game["season"] = None
+    elif body.season not in seasons.SEASONS:
+        raise HTTPException(422, "Nincs ilyen szezonesemény.")
+    elif not seasons.start(game, body.season):
+        raise HTTPException(409, "Már tart egy szezonesemény, előbb annak kell véget érnie.")
     return await updated(game)
 
 

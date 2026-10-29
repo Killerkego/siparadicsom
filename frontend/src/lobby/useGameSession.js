@@ -5,6 +5,7 @@ import {
   chooseOption,
   createGame,
   devBuildAll,
+  devSeason,
   devMove,
   joinGame,
   leaveGame,
@@ -93,6 +94,7 @@ export function useGameSession() {
     choose: async (choice) => setGame(await chooseOption(session.code, session.playerId, choice)),
     devMove: async (field) => setGame(await devMove(session.code, session.playerId, field)),
     devBuildAll: async () => setGame(await devBuildAll(session.code, session.playerId)),
+    devSeason: async (season) => setGame(await devSeason(session.code, session.playerId, season)),
     leave: async () => {
       await leaveGame(session.code, session.playerId).catch(() => {});
       saveSession(null);

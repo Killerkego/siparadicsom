@@ -2,11 +2,21 @@ import { useState } from 'react';
 import { fieldName, fields } from '../game/format';
 
 // Fejlesztői fül (csak ha a backendben DEV_MODE = True): dobás helyett bármelyik mezőre lépés,
-// és az összes építési elem ingyen
-export default function DevPanel({ game, me, canMove, busy, onMove, onBuildAll }) {
+// az összes építési elem ingyen, és szezonesemény azonnal (a hatások bemutatásához)
+const SEASON_OPTIONS = [
+  ['peak', 'Csúcsszezon'],
+  ['blizzard', 'Hóvihar'],
+  ['audit', 'Ellenőrzés'],
+  ['none', 'Nincs esemény'],
+];
+
+export default function DevPanel({ game, me, canMove, busy, onMove, onBuildAll, onSeason }) {
   const [open, setOpen] = useState(false);
   const [field, setField] = useState(1);
+  const [season, setSeason] = useState('blizzard');
   const allBuilt = me && me.buildings.length === game.buildings.length;
+  // amíg egy esemény tart, újat nem lehet indítani, csak a futót leállítani
+  const seasonBlocked = Boolean(game.season) && season !== 'none';
 
   return (
     <div className="dev-panel">
@@ -29,6 +39,17 @@ export default function DevPanel({ game, me, canMove, busy, onMove, onBuildAll }
           <button className="dev-action" disabled={busy || !me || allBuilt} onClick={onBuildAll}>
             {allBuilt ? 'Minden elem kész' : 'Minden épület megépítése'}
           </button>
+          <select value={season} onChange={(e) => setSeason(e.target.value)}>
+            {SEASON_OPTIONS.map(([id, label]) => (
+              <option key={id} value={id}>
+                {label}
+              </option>
+            ))}
+          </select>
+          <button className="dev-action" disabled={busy || seasonBlocked} onClick={() => onSeason(season)}>
+            {season === 'none' ? 'Szezonesemény leállítása' : 'Szezonesemény indítása'}
+          </button>
+          {seasonBlocked && <div className="hint">Már tart egy esemény: előbb állítsd le, vagy várd meg a végét.</div>}
         </>
       )}
     </div>

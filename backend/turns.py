@@ -2,6 +2,7 @@
 
 from fastapi import HTTPException
 
+import seasons
 from actions import add_log, animating, repay_loan
 from config import BUILDING_BY_ID, BUILDINGS, RULES
 
@@ -127,10 +128,13 @@ def tick_effects(game: dict, player: dict) -> None:
 
 
 def next_player(game: dict) -> None:
-    """A következő játékos jön; aki kártya miatt kimarad, azt átugorjuk (és a kimaradása fogy)."""
+    """A következő játékos jön; aki kártya miatt kimarad, azt átugorjuk (és a kimaradása fogy).
+    A kezdőjátékosra visszaérve új kör indul (ekkor jöhet vagy érhet véget egy szezonesemény)."""
     players = game["players"]
     for _ in range(len(players) * 4):
         game["turn"] = (game["turn"] + 1) % len(players)
+        if game["turn"] == 0:
+            seasons.new_round(game)
         player = players[game["turn"]]
         if not player["effects"]["skip_turns"]:
             return

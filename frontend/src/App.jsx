@@ -27,6 +27,7 @@ export default function App() {
     leave,
     devMove,
     devBuildAll,
+    devSeason,
   } = useGameSession();
   const [editingName, setEditingName] = useState(false);
 
@@ -69,6 +70,7 @@ export default function App() {
       onLeave={leave}
       onDevMove={devMove}
       onDevBuildAll={devBuildAll}
+      onDevSeason={devSeason}
     />
   );
 }

@@ -5,6 +5,7 @@ import Board from '../board/Board';
 import FixedCamera from '../board/FixedCamera';
 import Scenery, { MODEL_URL as SCENERY_URL } from '../scenery/Scenery';
 import Sky, { HORIZON_COLOR } from '../scenery/Sky';
+import Weather from '../scenery/Weather';
 import BuildSite, { MODEL_URL as BUILDINGS_URL } from './BuildSite';
 import CardDeck from './CardDeck';
 import Dice from './Dice';
@@ -49,11 +50,13 @@ function SceneReady({ onReady }) {
 }
 
 // meseszerű téli fények: lágy égbolt-fény és meleg napfény árnyékokkal
-function Lights() {
+// (refs: a szezonesemények ezeken hangolják az erősséget és a színt)
+function Lights({ refs }) {
   return (
     <>
-      <hemisphereLight args={['#e8f0f8', '#f4eee8', 1.25]} />
+      <hemisphereLight ref={refs.hemi} args={['#e8f0f8', '#f4eee8', 1.25]} />
       <directionalLight
+        ref={refs.sun}
         position={[-28, 24, 6]}
         color="#fff0db"
         intensity={2.2}
@@ -72,7 +75,8 @@ function Lights() {
   );
 }
 
-// A 3D jelenet: táj, tábla, középen a saját építkezés a kockával és a kártyapaklival, a bábuk és a saját csapdák.
+// A 3D jelenet: táj, tábla, középen a saját építkezés a kockával és a kártyapaklival, a bábuk és a saját csapdák,
+// szezoneseménykor pedig az időjárás (hó, csillámok, papírlapok, átszínezett fény és ég).
 // side: melyik oldal felé néz a kamera (0..3); a középső rész is erre fordul.
 export default function GameScene({
   game,
@@ -96,14 +100,19 @@ export default function GameScene({
   const viewed = settled.players.find((p) => p.id === viewedId) ?? settledMe;
   // a saját csapdák (más csapdáját nem látja senki); a mozgás végén jelennek meg vagy tűnnek el
   const myTraps = Object.entries(settled.traps ?? {}).filter(([, trap]) => trap.owner === playerId);
+  // a szezonesemények hangulata: fények és ég, amit a Weather átszínez
+  const lightRefs = { hemi: useRef(), sun: useRef() };
+  const skyUniforms = useRef();
 
   return (
     <Canvas shadows="percentage" dpr={[1, 2]} camera={{ fov: 55, near: 0.5, far: 400 }}>
       {/* meseszerű pára: a távoli hegyek a horizont színébe halványulnak */}
       <fog attach="fog" args={[HORIZON_COLOR, 90, 300]} />
-      <Sky />
+      <Sky uniformsRef={skyUniforms} />
       <FixedCamera side={side} />
-      <Lights />
+      <Lights refs={lightRefs} />
+      {/* szezonesemény: hóvihar, csúcsszezon, ellenőrzés (a mozgás végén vált, mint a felület) */}
+      <Weather season={settled.season?.id ?? null} lights={lightRefs} sky={skyUniforms} />
       <Suspense fallback={null}>
         <Scenery />
       </Suspense>

@@ -164,6 +164,13 @@ const SOUNDS = {
   race() {
     [784, 988, 1175].forEach((f, i) => bell(f, { gain: 0.06, delay: i * 0.1, dur: 0.6 }));
   },
+  // új szezonesemény: halk szélfúvás és egy ünnepélyes, kétszólamú csengetés
+  season() {
+    burst(1.2, { freq: 400, sweep: 1200, q: 0.7, gain: 0.05 });
+    bell(659, { gain: 0.07, delay: 0.1, dur: 1.4 });
+    bell(988, { gain: 0.05, delay: 0.1, dur: 1.2 });
+    bell(784, { gain: 0.06, delay: 0.45, dur: 1.6 });
+  },
   // csapda elsült: két lefelé lépő hang
   trap() {
     tone(466, 0.14, { type: 'triangle', gain: 0.07 });

@@ -4,6 +4,8 @@ import * as THREE from 'three';
 // Meseszerű, de visszafogott téli égbolt: fent halvány égkék, a horizont felé meleg krémszín.
 // A pufók felhők a Blender-modellben vannak (Felho.*).
 export const HORIZON_COLOR = '#f3ece6'; // ködhöz: a távoli hegyek ebbe a színbe halványulnak
+// az ég alapszínei; a szezonesemények (Weather) ezekből indulva színezik át
+export const BASE_SKY = { horizon: HORIZON_COLOR, middle: '#f1e4de', zenith: '#a9c6df' };
 
 const vertexShader = /* glsl */ `
   varying vec3 vDir;
@@ -29,14 +31,15 @@ const fragmentShader = /* glsl */ `
   }
 `;
 
-export default function Sky() {
+// uniformsRef: ide kerülnek az ég színei, hogy a szezonesemények átszínezhessék
+export default function Sky({ uniformsRef }) {
   const material = useMemo(
     () =>
       new THREE.ShaderMaterial({
         uniforms: {
-          horizon: { value: new THREE.Color(HORIZON_COLOR) },
-          middle: { value: new THREE.Color('#f1e4de') },
-          zenith: { value: new THREE.Color('#a9c6df') },
+          horizon: { value: new THREE.Color(BASE_SKY.horizon) },
+          middle: { value: new THREE.Color(BASE_SKY.middle) },
+          zenith: { value: new THREE.Color(BASE_SKY.zenith) },
         },
         vertexShader,
         fragmentShader,
@@ -47,6 +50,7 @@ export default function Sky() {
       }),
     [],
   );
+  if (uniformsRef) uniformsRef.current = material.uniforms;
 
   return (
     <mesh material={material} renderOrder={-1} raycast={() => null}>

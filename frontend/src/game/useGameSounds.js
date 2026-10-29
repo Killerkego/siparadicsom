@@ -8,8 +8,9 @@ const UI = '.game-panel, .decision-dialog, .card-bar, .roll-bar, .game-menu, .pi
 const QUIET_DECISIONS = new Set(['card', 'card_pick']);
 
 // A játék hangjai. A mozgás hangjait (kocka, lépések, felvonó, kártya, síverseny) az animációval együtt
-// ütemezi, így mindenkinél akkor szólnak, amikor a bábu lép. A saját pénz és építkezés, a csapda és a
-// „te jössz” a mozgás végén szól, amikor a felület is frissül (settled). A töltőképernyő alatt csend van.
+// ütemezi, így mindenkinél akkor szólnak, amikor a bábu lép. A saját pénz és építkezés, a csapda, az új
+// szezonesemény és a „te jössz” a mozgás végén szól, amikor a felület is frissül (settled). A töltőképernyő
+// alatt csend van.
 export function useGameSounds({ game, playerId, timeline, ready }) {
   const { action, settled, phase } = timeline;
 
@@ -50,6 +51,7 @@ export function useGameSounds({ game, playerId, timeline, ready }) {
       money: me?.money ?? 0,
       mine: me?.buildings.length ?? 0,
       trap: settled.trap_event?.seq ?? 0,
+      season: settled.season?.seq ?? 0,
       myTurn: settled.status === 'playing' && settled.turn_player_id === playerId,
     };
     const prev = before.current;
@@ -60,7 +62,8 @@ export function useGameSounds({ game, playerId, timeline, ready }) {
     else if (now.money > prev.money) play('coin');
     else if (now.money < prev.money) play('pay');
     if (now.trap > prev.trap) play('trap');
-    if (now.myTurn && !prev.myTurn) play('turn');
+    if (now.season > prev.season) play('season');
+    else if (now.myTurn && !prev.myTurn) play('turn');
   }, [settled, playerId, ready]);
 
   // a saját döntés megnyílik a képernyő közepén

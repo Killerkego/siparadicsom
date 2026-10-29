@@ -41,7 +41,15 @@ RULES = {
     "income_field": 2200,  # bevételi mezőn ennyit kap
     "expense_field": 1300,  # kiadási mezőn ennyit fizet (pénzhiánynál hitelből)
     "weak_start_bonus": 1000,  # Gyenge árfolyam kártya után a START-on csak ennyi jár
+    "season_income_boost": 50,  # Csúcsszezon (szezonesemény): ennyi % plusz a bevételi mezőkön
+    "season_expense_boost": 50,  # Ellenőrzés (szezonesemény): ennyi % plusz a kiadási mezőkön
 }
+
+# Szezonesemények (seasons.py): az első ebben a körben jön, mindegyik véletlenszerűen ennyi körig tart
+# (a határokat is beleértve), utána ennyi kör szünet következik (szintén véletlenszerűen)
+SEASON_FIRST_ROUND = 3
+SEASON_LENGTH = (1, 3)
+SEASON_GAP = (2, 3)
 
 # A felépítendő Aranyhegy Szálló elemei. A játékos minden köre végén legfeljebb egyet vehet meg,
 # ha van rá pénze, megvannak az előfeltételei és még nincs meg neki. Összesen 42 000 HK,

@@ -1,0 +1,202 @@
+/* szezonesemények (hud/Season): bejelentés a képernyő közepén és jelvény a jobb oldali panelen.
+   Mindegyiknek saját színe: Csúcsszezon arany, Hóvihar jeges kék, Ellenőrzés bordó. */
+.season-banner,
+.season-chip {
+  --season: #c19b58;
+  --season-deep: #8a6221;
+}
+
+.season-banner.blizzard,
+.season-chip.blizzard {
+  --season: #7fa7cf;
+  --season-deep: #2e5a86;
+}
+
+.season-banner.audit,
+.season-chip.audit {
+  --season: #c0786a;
+  --season-deep: #7a1a22;
+}
+
+.season-icon {
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.6;
+}
+
+/* bejelentés: középen, sötét üvegen; a kattintást csak maga a kártya fogja meg */
+.season-banner-wrap {
+  position: fixed;
+  inset: 0;
+  z-index: 26;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  pointer-events: none;
+}
+
+.season-banner {
+  position: relative;
+  width: min(380px, 100%);
+  box-sizing: border-box;
+  padding: 64px 26px 22px;
+  border: 1px solid rgba(226, 196, 137, 0.75);
+  border-radius: 22px;
+  background:
+    radial-gradient(ellipse at 50% 0%, color-mix(in srgb, var(--season) 35%, transparent), transparent 65%),
+    rgba(24, 28, 34, 0.86);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+  color: #fffaf0;
+  text-align: center;
+  backdrop-filter: blur(6px);
+  cursor: pointer;
+  pointer-events: auto;
+  user-select: none;
+  animation: season-in 4.8s cubic-bezier(0.2, 0.7, 0.2, 1) 0.1s both;
+}
+
+.season-banner-icon {
+  position: absolute;
+  top: -38px;
+  left: 50%;
+  display: grid;
+  place-items: center;
+  width: 84px;
+  height: 84px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 35%, var(--season), var(--season-deep));
+  box-shadow: 0 0 0 3px #e7c783, 0 0 0 6px rgba(24, 28, 34, 0.86), 0 0 40px color-mix(in srgb, var(--season) 70%, transparent);
+  color: #fffaf0;
+  transform: translateX(-50%);
+  animation: season-icon 900ms cubic-bezier(0.2, 0.8, 0.2, 1.3) 0.25s both;
+}
+
+.season-banner-icon .season-icon {
+  width: 46px;
+  height: 46px;
+  stroke-width: 1.5;
+}
+
+.season-eyebrow {
+  margin: 0;
+  color: #f0dfbb;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 2.6px;
+  text-transform: uppercase;
+}
+
+.season-eyebrow span {
+  color: #c19b58;
+}
+
+.season-banner h3 {
+  margin: 6px 0 4px;
+  color: #f2d48a;
+  font-family: 'Parisienne', 'Cormorant Garamond', cursive;
+  font-size: 46px;
+  font-weight: 400;
+  line-height: 1.1;
+}
+
+.season-text {
+  margin: 0;
+  color: #fffaf0;
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.season-length {
+  margin: 8px 0 0;
+  color: rgba(240, 223, 187, 0.75);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+/* jelvény a panelen, amíg az esemény tart */
+.season-chip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border: 1px solid color-mix(in srgb, var(--season) 55%, #ece2d0);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--season) 14%, #fffdf9);
+  color: var(--season-deep);
+}
+
+.season-chip > .season-icon {
+  flex: none;
+  width: 26px;
+  height: 26px;
+  padding: 4px;
+  box-sizing: border-box;
+  border-radius: 50%;
+  background: var(--season-deep);
+  color: #fffaf0;
+  stroke-width: 1.8;
+}
+
+.season-chip span {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.25;
+}
+
+.season-chip b {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.season-chip small {
+  color: #6b6255;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.season-chip em {
+  flex: none;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--season-deep);
+  color: #fffaf0;
+  font-size: 10.5px;
+  font-style: normal;
+  font-weight: 800;
+}
+
+@keyframes season-in {
+  0% {
+    opacity: 0;
+    transform: translateY(18px) scale(0.94);
+  }
+  10%,
+  88% {
+    opacity: 1;
+    transform: none;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes season-icon {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) scale(0.3) rotate(-60deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .season-banner,
+  .season-banner-icon {
+    animation: none;
+  }
+}

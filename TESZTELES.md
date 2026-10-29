@@ -4,7 +4,7 @@ A feladatleírás 12.2 és I/14. pontja szerinti ellenőrzés. A játékszabály
 ellenőrzik a backendben (`backend/tests/`), a Python beépített `unittest` moduljával, külön telepítés
 nélkül.
 
-**Utolsó futtatás:** 2026. október 29. · **Eredmény: 88 teszt, mind sikeres (OK)** · futási idő kb. 2,5 mp
+**Utolsó futtatás:** 2026. október 29. · **Eredmény: 103 teszt, mind sikeres (OK)** · futási idő kb. 3,5 mp
 
 ## Futtatás
 
@@ -31,6 +31,7 @@ A `backend` mappából:
 | Különleges előnyök és hátrányok | `CardTests` és `BuildingTests` (extra dobás, kimaradás, Lojális ügyfél, vásárlási tiltás) | ✅ |
 | Győzelmi feltételek | `VictoryTests`: nyer, ha mindhárom teljesül; nem nyer tartozással, kevés pénzzel vagy hiányzó elemmel | ✅ |
 | Játék lezárása és új játék | `VictoryTests`: a vége után senki nem dobhat; új játék indítható | ✅ |
+| Szezonesemények (saját mechanika, 10.) | `SeasonScheduleTests`, `SeasonEffectTests`: a körök számlálása (kimaradással is), az első esemény a 3. körben, véletlen fajta és véletlen hossz (1–3 kör), amíg tart, új nem indulhat, utána újak jönnek, kétszer egymás után nem ugyanaz; Csúcsszezon +50% a bevételi mezőkön (a Szezonnyitó bulival együtt is), Ellenőrzés +50% a kiadási mezőkön (a Könyvelővel a fele), Hóviharban zárva a felvonó, az esemény után minden visszaáll | ✅ |
 | Lezárhatóság, 2–4 játékos (12.1) | `SimulationTests`: teljes játékok szimulálása (lásd lent) | ✅ |
 
 ## Teljes játékok szimulálása

@@ -5,6 +5,7 @@ mezőjébe kerül."""
 import secrets
 
 import cards
+import seasons
 from actions import add_log, dice, pay, walk
 from config import BOARD, LIFTS, RULES
 from stories import FIELD_STORIES
@@ -34,29 +35,38 @@ def tell_story(game: dict, player: dict, amount: int, note: str) -> None:
 
 
 def income(game: dict, player: dict, moves: list[dict]) -> None:
-    """Bevételi mező: fix összeg (Szezonnyitó buli után 50%-kal több)."""
+    """Bevételi mező: fix összeg (Csúcsszezonban és a Szezonnyitó buli után 50%-kal több, a kettő együtt is)."""
     amount = RULES["income_field"]
-    extra = ""
+    notes = []
+    if seasons.active(game, "peak"):
+        amount = amount * (100 + RULES["season_income_boost"]) // 100
+        notes.append(f"Csúcsszezon: +{RULES['season_income_boost']}%")
     if player["effects"]["income_boost"]:
         player["effects"]["income_boost"] -= 1
         amount = amount * 3 // 2
-        extra = " (Szezonnyitó buli: +50%)"
+        notes.append("Szezonnyitó buli: +50%")
     player["money"] += amount
-    add_log(game, f"{player['name']} bevételi mezőre lépett: +{amount} HK{extra}.")
-    tell_story(game, player, amount, extra.strip(" ()"))
+    note = ", ".join(notes)
+    add_log(game, f"{player['name']} bevételi mezőre lépett: +{amount} HK{f' ({note})' if note else ''}.")
+    tell_story(game, player, amount, note)
 
 
 def expense(game: dict, player: dict, moves: list[dict]) -> None:
-    """Kiadási mező: fix összeg (Könyvelő után a fele); ha nincs rá pénz, hitelből."""
+    """Kiadási mező: fix összeg (Ellenőrzéskor 50%-kal több, a Könyvelő után a fele); ha nincs rá pénz,
+    hitelből."""
     amount = RULES["expense_field"]
-    extra = ""
+    notes = []
+    if seasons.active(game, "audit"):
+        amount = amount * (100 + RULES["season_expense_boost"]) // 100
+        notes.append(f"Ellenőrzés: +{RULES['season_expense_boost']}%")
     if player["effects"]["expense_half"]:
         player["effects"]["expense_half"] -= 1
         amount //= 2
-        extra = " (Könyvelő: csak a fele)"
+        notes.append("Könyvelő: csak a fele")
     pay(game, player, amount)
-    add_log(game, f"{player['name']} kiadási mezőre lépett: -{amount} HK{extra}.")
-    tell_story(game, player, -amount, extra.strip(" ()"))
+    note = ", ".join(notes)
+    add_log(game, f"{player['name']} kiadási mezőre lépett: -{amount} HK{f' ({note})' if note else ''}.")
+    tell_story(game, player, -amount, note)
 
 
 def card(game: dict, player: dict, moves: list[dict]) -> None:
@@ -103,6 +113,10 @@ def gambling(game: dict, player: dict, moves: list[dict]) -> None:
 
 
 def lift(game: dict, player: dict, moves: list[dict]) -> None:
+    """Felvonó: pénzért átvisz egy másik felvonó mezőjére; Hóviharban zárva van."""
+    if seasons.active(game, "blizzard"):
+        add_log(game, f"Hóvihar: a felvonók zárva, {player['name']} nem tud átmenni egy másik felvonóhoz.")
+        return
     targets = [f for f in LIFTS if f != player["position"]]
     game["pending"] = {"type": "lift", "player_id": player["id"], "targets": targets}
 
