@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { isMuted, onMuteChange, play, setMuted } from '../game/sound';
+import RulesButton from './Rules';
 
 // hangszóró ikon: hullámokkal, ha szól, áthúzva, ha némítva
 function SpeakerIcon({ muted }) {
@@ -18,8 +19,8 @@ function SpeakerIcon({ muted }) {
   );
 }
 
-// Felül középen: a játékkód, a hang ki/be kapcsolása és a kilépés, külön a játék vezérlőitől.
-// Kilépés előtt rákérdez.
+// Felül középen: a játékkód, a szabályfüzet, a hang ki/be kapcsolása és a kilépés, külön a játék
+// vezérlőitől. Kilépés előtt rákérdez.
 export default function GameMenu({ code, onLeave }) {
   const [confirming, setConfirming] = useState(false);
   const [muted, setMutedState] = useState(isMuted);
@@ -35,6 +36,7 @@ export default function GameMenu({ code, onLeave }) {
       <span className="game-menu-code">
         <span aria-hidden="true">✦</span> Játékkód <b>{code}</b>
       </span>
+      <RulesButton className="secondary icon-button" />
       <button
         className={muted ? 'secondary sound-toggle muted' : 'secondary sound-toggle'}
         onClick={toggleSound}

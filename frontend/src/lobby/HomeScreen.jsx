@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import RulesButton from '../hud/Rules';
 import Snowfall from './Snowfall';
 
 // Kezdőlap: csak a név megadása; utána a társaságok oldala jön (új társaság, nyitott lista, csatlakozás kóddal)
@@ -52,6 +53,8 @@ export default function HomeScreen({ initialName = '', onContinue }) {
               Tovább a társaságokhoz
             </button>
           </form>
+
+          <RulesButton className="rules-link">Játékszabályok</RulesButton>
         </section>
       </div>
     </main>

@@ -1317,8 +1317,9 @@
   background: rgba(255, 250, 240, 0.1);
 }
 
-/* hang ki/be: kerek ikon gomb */
-.game-menu button.sound-toggle {
+/* hang ki/be és szabályfüzet: kerek ikon gombok */
+.game-menu button.sound-toggle,
+.game-menu button.icon-button {
   display: grid;
   place-items: center;
   width: 30px;
@@ -1326,7 +1327,8 @@
   padding: 0;
 }
 
-.sound-toggle svg {
+.sound-toggle svg,
+.book-icon {
   width: 17px;
   height: 17px;
   fill: none;

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import FigurePreview from '../game/FigurePreview';
+import RulesButton from '../hud/Rules';
 import { FIGURES } from '../game/figures';
 import VisibilityToggle, { VisibilityIcon } from './VisibilityToggle';
 
@@ -177,6 +178,8 @@ export default function LobbyScreen({
         ) : (
           <p className="hint">Várakozás, hogy a házigazda elindítsa a játékot…</p>
         )}
+
+        <RulesButton className="btn secondary rules-btn">Játékszabályok</RulesButton>
 
         <button className="btn secondary" onClick={onLeave}>
           Kilépés
