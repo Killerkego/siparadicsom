@@ -78,7 +78,9 @@ def walk(game: dict, player: dict, steps: int, bonus: int | None = None) -> dict
 
 
 def start_bonus(game: dict, player: dict, amount: int | None = None) -> None:
-    """A START-on járó pénz (Gyenge árfolyam után kevesebb), utána a bank levonja a hitelt."""
+    """A START-on járó pénz (Gyenge árfolyam után kevesebb). A hitelt a bank nem itt vonja le, hanem a
+    kör végén, a mező hatása után (turns.finish_turn): így nem viszi el a pénzt, hogy ugyanabban a
+    lépésben egy kiadási mezőn újra, kamatra kelljen kölcsönt felvenni."""
     if amount is None:
         amount = RULES["start_bonus"]
         if player["effects"]["weak_start"]:
@@ -86,7 +88,8 @@ def start_bonus(game: dict, player: dict, amount: int | None = None) -> None:
             amount = RULES["weak_start_bonus"]
     player["money"] += amount
     add_log(game, f"{player['name']} áthaladt a START-on: +{amount} HK.")
-    repay_loan(game, player)
+    if player["loan"]:
+        player["repay_due"] = True
 
 
 def jump(player: dict, target: int) -> dict:
@@ -113,7 +116,9 @@ def pay(game: dict, player: dict, amount: int) -> None:
 
 
 def repay_loan(game: dict, player: dict) -> None:
-    """A START-on a bank visszaveszi a hitelt, amennyit a játékos pénze fedez."""
+    """Törlesztés: a bank visszaveszi a hitelt, amennyit a játékos pénze fedez. A START-on áthaladt
+    játékos köre végén magától, a saját körében dobás előtt pedig önként (play.repay)."""
+    player["repay_due"] = False
     amount = min(player["loan"], player["money"])
     if amount <= 0:
         return

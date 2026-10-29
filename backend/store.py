@@ -48,7 +48,8 @@ def new_player(game: dict | None, name: str) -> dict:
         "money": RULES["start_money"],
         "in_school": False,
         "buildings": [],  # a megépített elemek azonosítói, vásárlási sorrendben
-        "loan": 0,  # a banknak tartozott összeg kamattal; a START-on törleszt, hitellel nem lehet nyerni
+        "loan": 0,  # a banknak tartozott összeg kamattal; hitellel nem lehet nyerni
+        "repay_due": False,  # a START-on áthaladt: a kör végén, a mező hatása után törleszt
         "effects": new_effects(),  # a kártyák későbbi vagy több körös hatásai
     }
 

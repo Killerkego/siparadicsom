@@ -23,6 +23,7 @@ DEFAULT_THINK_MS = 1600
 
 LIFT_RESERVE = 3000  # felvonóra csak akkor száll, ha utána is marad legalább ennyi pénze
 GAMBLE_RESERVE = 2000  # gamblingon csak ennyi pénz felett kockáztat
+REPAY_RESERVE = 2000  # dobás előtt kifizeti a teljes hitelt, ha utána is marad ennyi pénze
 
 # játékonként a futó gépi lépéssorozat
 running: dict[str, asyncio.Task] = {}
@@ -50,6 +51,16 @@ def decide(game: dict, player: dict) -> tuple[str, str | None]:
     if not pending:
         return "roll", None
     return "choose", CHOICES[pending["type"]](game, player, pending)
+
+
+def wants_to_repay(player: dict) -> bool:
+    """Dobás előtt önként törleszt: ha a teljes hitelt ki tudja fizetni, és marad tartaléka, vagy ha
+    már minden eleme megvan, és a törlesztés után a győzelemhez kellő pénze is megmarad."""
+    loan, money = player["loan"], player["money"]
+    if not loan or money < loan:
+        return False
+    all_built = len(player["buildings"]) == len(BUILDING_BY_ID)
+    return money - loan >= (RULES["win_money"] if all_built else REPAY_RESERVE)
 
 
 def choose_card(game: dict, player: dict, pending: dict) -> str:
@@ -120,6 +131,8 @@ def step(game: dict) -> bool:
         return False
     action, choice = decide(game, player)
     if action == "roll":
+        if wants_to_repay(player):
+            play.repay(game, player)
         play.roll(game, player)
         return True
     try:

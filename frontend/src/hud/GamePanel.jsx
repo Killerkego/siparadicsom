@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { hk } from '../game/format';
 import BuildList from './BuildList';
 import { DECISION_NAMES } from './decisions/Decision';
 
@@ -36,9 +37,10 @@ function DieTile({ value }) {
 
 // A jobb oldali panel: fejléc (ki következik, utolsó dobás), a legutóbbi esemény és a kiválasztott
 // játékos építkezése (alapból a sajátunk; a játékoskártyára kattintva másé, `viewedId`).
+// Ha van hitelünk, a saját körünkben dobás előtt itt lehet törleszteni (`canRepay`).
 // A fejlécre kattintva összecsukható. A saját döntés a képernyő közepén, a dobás lent, a kilépés fent van.
 // A pénz, a napló és az épületek a mozgás végéig az előző (settled) állapot szerint látszanak.
-export default function GamePanel({ game, settled, playerId, timeline, viewedId, onView, error }) {
+export default function GamePanel({ game, settled, playerId, timeline, viewedId, onView, canRepay, onRepay, error }) {
   const [collapsed, setCollapsed] = useState(() => load(COLLAPSED_KEY, '0') === '1');
   const { action, phase } = timeline;
   const myTurn = game.turn_player_id === playerId;
@@ -92,6 +94,15 @@ export default function GamePanel({ game, settled, playerId, timeline, viewedId,
       <section className="panel-action">
         {myTurn && me?.in_school && !game.pending && phase === 'idle' && (
           <div className="hint">Oktatáson vagy: páros dobással mehetsz tovább.</div>
+        )}
+        {canRepay && (
+          <div className="loan-repay">
+            <span>
+              Hiteled: <b>{hk(me.loan)}</b>
+              <small>{me.money >= me.loan ? 'Ki tudod fizetni az egészet.' : `Most ${hk(me.money)}-t tudsz törleszteni.`}</small>
+            </span>
+            <button onClick={onRepay}>Hitel törlesztése</button>
+          </div>
         )}
         {error && <div className="error">{error}</div>}
         {settled.log.length > 0 && (

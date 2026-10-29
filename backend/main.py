@@ -198,6 +198,14 @@ async def roll_dice(code: str, body: PlayerRef):
     return await updated(game)
 
 
+@app.post("/api/games/{code}/repay")
+async def repay_loan(code: str, body: PlayerRef):
+    """Önkéntes törlesztés a saját körben, dobás előtt (amennyit a pénz fedez)."""
+    game = get_game(code)
+    play.repay(game, acting_player(game, body.player_id))
+    return await updated(game)
+
+
 @app.post("/api/games/{code}/choose")
 async def choose(code: str, body: ChoiceIn):
     """Döntés a várakozó kérdésben (kártya, építkezés, gambling, felvonó, csapda)."""

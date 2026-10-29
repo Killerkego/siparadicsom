@@ -248,6 +248,50 @@
 }
 
 /* a legutóbbi esemény mindig látszik */
+/* önkéntes törlesztés: a saját körben, dobás előtt, ha van hitel */
+.loan-repay {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px 9px 12px;
+  border: 1px solid #ecc9bd;
+  border-radius: 12px;
+  background: #fbefe9;
+  color: var(--hud-text);
+  font-size: 12.5px;
+}
+
+.loan-repay span {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.loan-repay b {
+  color: #a8442f;
+}
+
+.loan-repay small {
+  color: var(--hud-muted);
+  font-size: 11px;
+}
+
+.game-panel .loan-repay button {
+  flex: none;
+  padding: 7px 12px;
+  border: 1px solid #ad8747;
+  border-radius: 9px;
+  background: var(--hud-button);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.game-panel .loan-repay button:hover {
+  background: var(--hud-button-hover);
+}
+
 .last-event {
   display: flex;
   flex-direction: column;

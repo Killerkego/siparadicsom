@@ -548,7 +548,8 @@ class CardTests(unittest.TestCase):
 
 
 class MoneyShortageTests(unittest.TestCase):
-    """Pénzhiány: a bank hitelt ad kamattal, a START-on törleszt, hitellel nem lehet nyerni."""
+    """Pénzhiány: a bank hitelt ad kamattal; a START-on áthaladt játékos a kör végén (a mező hatása után)
+    törleszt, a saját körében dobás előtt önként is; hitellel nem lehet nyerni."""
 
     def test_loan_when_money_runs_out(self):
         game, _ = new_game(2)
@@ -571,6 +572,72 @@ class MoneyShortageTests(unittest.TestCase):
         roll(game, player, 3)  # START-on át a #1 bevételi mezőre
         self.assertEqual(player["loan"], 0)
         self.assertEqual(player["money"], 500 + RULES["start_bonus"] - 1100 + RULES["income_field"])
+
+    def test_repayment_waits_for_the_field_effect(self):
+        # régen a START-on elvitte a pénzt, és a kiadási mezőn újra, kamatra kellett kölcsönt felvenni
+        game, _ = new_game(2)
+        player = current(game)
+        player["loan"] = 1100
+        player["money"] = 0
+        put(player, 38)
+        roll(game, player, 6)  # START-on át a #4 kiadási mezőre
+        self.assertEqual(BOARD[4]["type"], "kiadas")
+        paid = RULES["start_bonus"] - RULES["expense_field"]  # ennyi marad a kiadás után, ezt törleszti
+        self.assertEqual(player["loan"], 1100 - paid, "nem kellett új hitelt felvenni")
+        self.assertEqual(player["money"], 0)
+
+    def test_no_repayment_without_passing_start(self):
+        game, _ = new_game(2)
+        player = current(game)
+        player["loan"] = 1100
+        player["money"] = 5000
+        put(player, 7)
+        roll(game, player, 1)  # #8 semleges
+        self.assertEqual(player["loan"], 1100)
+
+    def test_voluntary_repayment(self):
+        game, ids = new_game(2)
+        player = current(game)
+        player["loan"] = 1100
+        player["money"] = 5000
+        run(main.repay_loan(game["code"], PlayerRef(player_id=ids[0])))
+        self.assertEqual(player["loan"], 0)
+        self.assertEqual(player["money"], 3900)
+        self.assertIs(current(game), player, "a törlesztés nem zárja le a kört, utána dobhat")
+
+    def test_voluntary_repayment_is_partial_when_money_is_short(self):
+        game, _ = new_game(2)
+        player = current(game)
+        player["loan"] = 3300
+        player["money"] = 1000
+        play.repay(game, player)
+        self.assertEqual(player["loan"], 2300)
+        self.assertEqual(player["money"], 0)
+
+    def test_voluntary_repayment_is_refused_when_not_allowed(self):
+        game, ids = new_game(2)
+        player, other = game["players"]
+        other["loan"] = 1100
+        with self.assertRaises(HTTPException) as err:  # nem ő következik
+            run(main.repay_loan(game["code"], PlayerRef(player_id=ids[1])))
+        self.assertEqual(err.exception.status_code, 403)
+        with self.assertRaises(HTTPException):  # nincs hitele
+            play.repay(game, player)
+        player["loan"] = 1100
+        game["pending"] = {"type": "build", "player_id": player["id"]}
+        with self.assertRaises(HTTPException):  # döntés közben nem
+            play.repay(game, player)
+
+    def test_win_right_after_voluntary_repayment(self):
+        game, _ = new_game(2)
+        player = current(game)
+        player["buildings"] = [b["id"] for b in BUILDINGS]
+        player["loan"] = 1100
+        player["money"] = RULES["win_money"] + 1100
+        play.repay(game, player)
+        play.close_turn(game, player)
+        self.assertEqual(game["status"], "finished")
+        self.assertEqual(game["winner_id"], player["id"])
 
     def test_money_never_negative(self):
         game, _ = new_game(2)

@@ -22,6 +22,7 @@ export default function App() {
     pickFigure,
     start,
     roll,
+    repay,
     choose,
     leave,
     devMove,
@@ -63,6 +64,7 @@ export default function App() {
       game={game}
       playerId={session.playerId}
       onRoll={roll}
+      onRepay={repay}
       onChoose={choose}
       onLeave={leave}
       onDevMove={devMove}

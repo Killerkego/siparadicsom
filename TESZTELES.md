@@ -4,7 +4,7 @@ A feladatleírás 12.2 és I/14. pontja szerinti ellenőrzés. A játékszabály
 ellenőrzik a backendben (`backend/tests/`), a Python beépített `unittest` moduljával, külön telepítés
 nélkül.
 
-**Utolsó futtatás:** 2026. október 28. · **Eredmény: 62 teszt, mind sikeres (OK)** · futási idő kb. 2 mp
+**Utolsó futtatás:** 2026. október 29. · **Eredmény: 88 teszt, mind sikeres (OK)** · futási idő kb. 2,5 mp
 
 ## Futtatás
 
@@ -25,7 +25,7 @@ A `backend` mappából:
 | Kötelező és speciális mezők | `FieldTests`: bevételi, kiadási, semleges, kártyahúzó, vásárlási (30% kedvezmény); oktatás, síverseny (döntetlennél újradobás), gambling (nyerés, bukás, kihagyás), felvonó (pénz nélkül nem), csapda (vissza / pénz, saját csapda nem sül el); minden mezőnek van funkciója, legalább 4 kártyahúzó és 3 speciális típus | ✅ |
 | Mind a 40 eseménykártya | `CardTests`: 12/12/8/8 elosztás; **mind a 40 lap egyenként kihúzva ténylegesen megváltoztatja a játékállapotot**; extra dobás, körből kimaradás, visszalépés, Lojális ügyfél, Jósnő; a pakli nem ismétel, amíg el nem fogy, utána újrakever | ✅ |
 | Pénzügyi műveletek | a mezők, kártyák, START és építkezés tesztjei pontos összegekkel | ✅ |
-| Pénzhiány kezelése | `MoneyShortageTests`: hitel kamattal, a START-on törleszt, a pénz sosem negatív | ✅ |
+| Pénzhiány kezelése | `MoneyShortageTests`: hitel kamattal; a START-on áthaladva a kör végén, a mező hatása után törleszt (nem kell rögtön újra hitelt felvenni); önkéntes törlesztés a saját körben dobás előtt (teljes vagy részleges, más körében és döntés közben nem); törlesztés után rögtön nyerhet; a pénz sosem negatív. `BotTests`: a gépi játékos is törleszt | ✅ |
 | Építési elemek vásárlása | `BuildingTests`: 8 elem, legalább 2 előfeltétellel, kezdőtőke 20–30%; sikeres vásárlás, körönként egy | ✅ |
 | Vásárlási feltételek ellenőrzése | `BuildingTests`: kevés pénz, hiányzó előfeltétel, már meglévő elem (mind elutasítva, okkal), kártyás tiltás, kedvezmény | ✅ |
 | Különleges előnyök és hátrányok | `CardTests` és `BuildingTests` (extra dobás, kimaradás, Lojális ügyfél, vásárlási tiltás) | ✅ |
@@ -99,11 +99,18 @@ Indoklás:
 - **A csapda és a bukott gambling pozitív mezőre is visszaküldhetett** (bevételi mező, síverseny), és a
   célmező hatása nem érvényesült. Javítva: a tábla úgy van kirakva, hogy mindig kiadási mezőre küldjön
   vissza, és ott a kiadást is le kell fizetni.
+- **A START-on a bank a teljes készpénzt elvihette törlesztésre, még a mező hatása előtt**, így egy
+  kiadási mezőn ugyanabban a lépésben újra, kamatra kellett hitelt felvenni (180 szimulált játékban
+  118-szor). Javítva: a törlesztés a kör végén, a mező hatása után történik (utána 7-szer).
+- **Aki tartozott, csak a START-on törleszthetett**, ezért akkor sem nyerhetett, ha minden más
+  feltételt teljesített (27 eset). Javítva: a saját körben, dobás előtt önként is lehet törleszteni
+  („Hitel törlesztése” gomb), és a gépi játékosok is így tesznek.
 
 ## Szabályok, amelyeket a tesztek rögzítenek
 
 - Kártyával elért mező (előre, hátra, START, helycsere) hatása nem érvényesül, csak a START-pénz.
   Csapdás és gamblinges visszalépésnél viszont a célmező (kiadási) hatása érvényesül.
-- Tartozással lehet vásárolni, ha van rá készpénz, de nyerni csak tartozás nélkül lehet; a hitelt a bank
-  a START-on vonja le.
+- Tartozással lehet vásárolni, ha van rá készpénz, de nyerni csak tartozás nélkül lehet. A hitelt a bank
+  a START-on áthaladt játékos köre végén vonja le (a mező hatása után, az építkezés előtt), amennyit a
+  pénze fedez; a játékos a saját körében, dobás előtt önként is törleszthet.
 - Az „Egyszer nem vásárolhatsz épületet” hatású lapok a lap húzásának körében tiltják a vásárlást.

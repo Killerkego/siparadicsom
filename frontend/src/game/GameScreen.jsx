@@ -20,7 +20,7 @@ import { useGameTimeline } from './useGameTimeline';
 // dobás sáv, játékkód és kilépés, fejlesztői fül, síverseny, a bevételi/kiadási mezők története, értesítés az elsült
 // saját csapdáról, győzelem, a modellek betöltéséig a töltőképernyő).
 // Itt dől el, ki mit tehet éppen; a szerver felé a kéréseket a `send` küldi, a hibát a panel mutatja.
-export default function GameScreen({ game, playerId, onRoll, onChoose, onLeave, onDevMove, onDevBuildAll }) {
+export default function GameScreen({ game, playerId, onRoll, onRepay, onChoose, onLeave, onDevMove, onDevBuildAll }) {
   const timeline = useGameTimeline(game);
   const { phase, settled, fieldOf } = timeline;
   const [requesting, setRequesting] = useState(false);
@@ -60,6 +60,9 @@ export default function GameScreen({ game, playerId, onRoll, onChoose, onLeave, 
     }
   };
   const roll = () => canRoll && send(onRoll);
+  // önkéntes törlesztés: a saját körben, dobás előtt, ha van hitel és van miből
+  const canRepay = canRoll && me?.loan > 0 && me.money > 0;
+  const repay = () => canRepay && send(onRepay);
   const choose = (choice) => !busy && send(() => onChoose(choice));
 
   return (
@@ -95,6 +98,8 @@ export default function GameScreen({ game, playerId, onRoll, onChoose, onLeave, 
         timeline={timeline}
         viewedId={viewedId}
         onView={setViewing}
+        canRepay={canRepay}
+        onRepay={repay}
         error={myPending ? '' : error}
       />
       {viewedId !== playerId && <ViewingBanner player={viewed} onBack={() => setViewing(playerId)} />}

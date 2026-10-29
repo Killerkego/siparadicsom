@@ -2,7 +2,7 @@
 
 from fastapi import HTTPException
 
-from actions import add_log, animating
+from actions import add_log, animating, repay_loan
 from config import BUILDING_BY_ID, BUILDINGS, RULES
 
 # a kör végén fogyó, több körös kártyahatások és a lejáratkor kiírt név
@@ -72,7 +72,10 @@ def build(game: dict, player: dict, building: dict, discount: int) -> None:
 
 
 def finish_turn(game: dict, player: dict) -> None:
-    """A mező hatásai után: ha van megvehető elem, a játékos dönthet róla, különben lezárul a kör."""
+    """A mező hatásai után: ha a játékos a START-on haladt át, először törleszt (amennyit a pénze fedez);
+    utána, ha van megvehető elem, dönthet róla, különben lezárul a kör."""
+    if player.get("repay_due"):
+        repay_loan(game, player)
     if player["effects"]["build_block"]:
         player["effects"]["build_block"] -= 1
         add_log(game, f"{player['name']} ebben a körben nem vásárolhat épületet (kártya).")

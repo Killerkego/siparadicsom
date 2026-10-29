@@ -63,6 +63,20 @@ class BotTests(unittest.TestCase):
         run(main.start_game(game["code"], PlayerRef(player_id=ids[0])))
         self.assertFalse(bots.step(game), "az ember következik, a gép nem lép")
 
+    def test_bot_repays_its_loan_before_rolling(self, _):
+        game, ids = new_lobby(1)
+        add_bot(game, ids[0])
+        run(main.start_game(game["code"], PlayerRef(player_id=ids[0])))
+        game["turn"] = 1
+        bot = game["players"][1]
+        bot["loan"], bot["money"] = 1100, 5000
+        self.assertTrue(bots.wants_to_repay(bot))
+        self.assertTrue(bots.step(game))
+        self.assertEqual(bot["loan"], 0)
+        # ha nem tudná az egészet kifizetni tartalékkal, nem törleszt (a START-on úgyis megteszi)
+        bot["loan"], bot["money"] = 4000, 5000
+        self.assertFalse(bots.wants_to_repay(bot))
+
     def test_bots_play_a_whole_game(self, _):
         """Egy ember és három gép; az ember helyett is a gépi döntés lép. Valaki nyerjen, senki ne akadjon el."""
         for _round in range(3):

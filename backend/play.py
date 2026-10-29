@@ -4,7 +4,7 @@
 from fastapi import HTTPException
 
 import cards
-from actions import add_log, dice, dobott, jump, record_action, walk
+from actions import add_log, dice, dobott, jump, record_action, repay_loan, walk
 from config import BUILDING_BY_ID, BUILDINGS, FIELD_COUNT, RULES
 from fields import land
 from turns import build, build_problem, close_turn, finish_turn
@@ -50,6 +50,18 @@ def modified_steps(game: dict, player: dict, value: int) -> int:
         steps = max(0, steps - 1)
         add_log(game, f"Jegesedés: {player['name']} dobásából 1-et le kell vonni, {steps} mezőt lép.")
     return steps
+
+
+def repay(game: dict, player: dict) -> None:
+    """Önkéntes törlesztés a saját körben, dobás előtt: a bank annyit vesz vissza a hitelből, amennyit
+    a játékos pénze fedez. Így nem kell a START-ig várnia, ha már minden másban nyerne."""
+    if game["pending"]:
+        raise HTTPException(409, "Előbb dönts a mezőn.")
+    if not player["loan"]:
+        raise HTTPException(409, "Nincs hiteled.")
+    if player["money"] <= 0:
+        raise HTTPException(409, "Nincs pénzed a törlesztéshez.")
+    repay_loan(game, player)
 
 
 # --- döntések: mindegyik a játékos választását hajtja végre ---
