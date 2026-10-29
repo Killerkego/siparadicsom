@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import DecisionLayer from '../hud/DecisionLayer';
 import DevPanel from '../hud/DevPanel';
 import FieldStory from '../hud/FieldStory';
@@ -10,8 +10,10 @@ import RollBar from '../hud/RollBar';
 import SkiRace from '../hud/SkiRace';
 import TrapAlert from '../hud/TrapAlert';
 import Victory from '../hud/Victory';
+import ViewingBanner from '../hud/ViewingBanner';
 import { fieldName, fields } from './format';
 import GameScene from './GameScene';
+import { useGameSounds } from './useGameSounds';
 import { useGameTimeline } from './useGameTimeline';
 
 // A játék képernyője: a 3D jelenet és fölötte a felületek (játékoskártyák, panel, középen a saját döntés,
@@ -24,6 +26,7 @@ export default function GameScreen({ game, playerId, onRoll, onChoose, onLeave, 
   const [requesting, setRequesting] = useState(false);
   const [error, setError] = useState('');
   const [sceneReady, setSceneReady] = useState(false);
+  useGameSounds({ game, playerId, timeline, ready: sceneReady });
 
   const busy = phase !== 'idle' || requesting;
   const myTurn = game.turn_player_id === playerId;
@@ -35,6 +38,15 @@ export default function GameScreen({ game, playerId, onRoll, onChoose, onLeave, 
   // mindenkinél a saját bábuja felé fordul a kamera; mások lépésére nem változik a nézet
   const me = game.players.find((p) => p.id === playerId);
   const side = Math.floor((me ? fieldOf(me) : 0) / 10);
+
+  // kinek az építkezése látszik középen és a panelen: alapból a sajáté, a játékoskártyára kattintva másé;
+  // ha a játékos kilépett, vagy nekünk kell építeni, visszaáll a sajátunkra
+  const [viewing, setViewing] = useState(playerId);
+  const viewed = settled.players.find((p) => p.id === viewing) ?? settled.players.find((p) => p.id === playerId);
+  const viewedId = viewed?.id ?? playerId;
+  useEffect(() => {
+    if (myPending?.type === 'build') setViewing(playerId);
+  }, [myPending?.type, playerId]);
 
   const send = async (request) => {
     setRequesting(true);
@@ -63,6 +75,7 @@ export default function GameScreen({ game, playerId, onRoll, onChoose, onLeave, 
         onAckCard={() => choose('ok')}
         canPickCard={canPickCard}
         onPickCard={choose}
+        viewedId={viewedId}
         onReady={() => setSceneReady(true)}
       />
       <PlayerCards
@@ -70,6 +83,8 @@ export default function GameScreen({ game, playerId, onRoll, onChoose, onLeave, 
         buildings={game.buildings}
         turnPlayerId={game.turn_player_id}
         playerId={playerId}
+        viewedId={viewedId}
+        onView={setViewing}
         ready={sceneReady}
         fieldLabel={(p) => fieldName(fields[fieldOf(game.players.find((g) => g.id === p.id) ?? p)])}
       />
@@ -78,8 +93,11 @@ export default function GameScreen({ game, playerId, onRoll, onChoose, onLeave, 
         settled={settled}
         playerId={playerId}
         timeline={timeline}
+        viewedId={viewedId}
+        onView={setViewing}
         error={myPending ? '' : error}
       />
+      {viewedId !== playerId && <ViewingBanner player={viewed} onBack={() => setViewing(playerId)} />}
       {myPending && (
         <DecisionLayer pending={myPending} game={game} me={me} busy={busy} error={error} onChoose={choose} />
       )}

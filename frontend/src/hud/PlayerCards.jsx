@@ -22,8 +22,9 @@ function Effects({ effects }) {
 
 // Játékoskártyák a bal felső sarokban: bábu portréja, egyenleg, hitel és az építkezés állása.
 // A kártya a tábla keretét idézi: fenyőfa csík, aranyvonal, alul festett rombuszlánc.
+// Egy kártyára kattintva annak a játékosnak az építkezése látszik a tábla közepén (`viewedId`).
 // `players`: a mozgás végén frissülő (settled) állapot, hogy a pénz ne változzon előre.
-export default function PlayerCards({ players, buildings, turnPlayerId, playerId, fieldLabel, ready }) {
+export default function PlayerCards({ players, buildings, turnPlayerId, playerId, viewedId, onView, fieldLabel, ready }) {
   const portraits = usePortraits(ready);
   return (
     <div className="player-cards">
@@ -31,8 +32,19 @@ export default function PlayerCards({ players, buildings, turnPlayerId, playerId
         const figure = FIGURES[p.figure];
         const built = p.buildings.length;
         const turn = p.id === turnPlayerId;
+        const classes = ['player-card', turn && 'turn', p.id === viewedId && 'viewed'].filter(Boolean).join(' ');
         return (
-          <div key={p.id} className={turn ? 'player-card turn' : 'player-card'} style={{ '--player': p.color }}>
+          <div
+            key={p.id}
+            className={classes}
+            style={{ '--player': p.color }}
+            role="button"
+            tabIndex={0}
+            aria-pressed={p.id === viewedId}
+            title={p.id === playerId ? 'A saját építkezésed középen' : `${p.name} építkezése középen`}
+            onClick={() => onView(p.id)}
+            onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), onView(p.id))}
+          >
             <div className="player-card-head">
               <div className="portrait" title={figure.name}>
                 {portraits[p.figure] ? <img src={portraits[p.figure]} alt={figure.name} /> : <span>{figure.icon}</span>}

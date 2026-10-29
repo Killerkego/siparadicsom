@@ -278,6 +278,70 @@
   color: var(--hud-gold-soft);
 }
 
+/* más játékos építkezésénél a cím az ő színét kapja */
+.panel-section[style] {
+  color: var(--player);
+}
+
+.game-panel button.panel-back {
+  flex: none;
+  align-self: center;
+  margin: 6px 0 0;
+  padding: 3px 12px;
+  border-radius: 999px;
+  background: transparent;
+  box-shadow: inset 0 0 0 1px #d9c49a;
+  color: #806334;
+  font-size: 11.5px;
+  font-weight: 800;
+}
+
+.game-panel button.panel-back:hover {
+  background: #f5efe4;
+}
+
+/* fent középen, a játékkód alatt: kinek az építkezését nézzük */
+.viewing-banner {
+  position: absolute;
+  top: 58px;
+  left: 50%;
+  z-index: 24;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 5px 5px 5px 14px;
+  border: 1px solid var(--hud-glass-line);
+  border-radius: 999px;
+  background: var(--hud-glass);
+  box-shadow: 0 6px 18px rgba(20, 23, 24, 0.22);
+  backdrop-filter: blur(6px);
+  color: #f0dfbb;
+  font-size: 12.5px;
+  white-space: nowrap;
+  transform: translateX(-50%);
+  user-select: none;
+  animation: hud-rise 400ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+.viewing-banner b {
+  color: #fffaf0;
+}
+
+.viewing-banner .turn-dot {
+  box-shadow: 0 0 0 2px rgba(31, 35, 38, 0.9), 0 0 0 3.5px var(--player);
+}
+
+.viewing-banner button {
+  padding: 4px 12px;
+  border: 1px solid #c9a96a;
+  border-radius: 999px;
+  background: var(--hud-button);
+  color: #fffaf0;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
 .panel-body {
   flex: 1 1 auto;
   min-height: 70px;
@@ -497,11 +561,14 @@
   background: #eee3d1;
 }
 
-/* középre nyíló döntési ablak (építkezés, felvonó, gambling, csapda) */
+/* középre nyíló döntési ablak (építkezés, felvonó, gambling, csapda). A sötétített háttér átengedi a
+   kattintást, csak az ablak fogja meg: döntés közben is lehet a játékoskártyákra kattintva mások
+   építkezését nézni, a hangot némítani vagy kilépni. */
 .decision-overlay {
   position: fixed;
   inset: 0;
   z-index: 20;
+  pointer-events: none;
   display: grid;
   place-items: center;
   padding: 16px;
@@ -511,6 +578,7 @@
 
 .decision-dialog {
   position: relative;
+  pointer-events: auto;
   display: flex;
   flex-direction: column;
   gap: 14px;
@@ -1193,6 +1261,7 @@
   position: absolute;
   top: 12px;
   left: 50%;
+  z-index: 25; /* a döntési ablak (20) fölött: a hang és a kilépés döntés közben is elérhető */
   transform: translateX(-50%);
   display: flex;
   align-items: center;
@@ -1246,6 +1315,28 @@
 
 .game-menu button.secondary:hover {
   background: rgba(255, 250, 240, 0.1);
+}
+
+/* hang ki/be: kerek ikon gomb */
+.game-menu button.sound-toggle {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+}
+
+.sound-toggle svg {
+  width: 17px;
+  height: 17px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-width: 1.7;
+}
+
+.game-menu button.sound-toggle.muted {
+  color: rgba(240, 223, 187, 0.55);
 }
 
 @keyframes hud-rise {

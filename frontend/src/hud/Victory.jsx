@@ -1,12 +1,15 @@
+import { useEffect } from 'react';
 import { FIGURES } from '../game/figures';
 import { hk } from '../game/format';
 import { usePortraits } from '../game/portraits';
+import { play } from '../game/sound';
 import Confetti from './Confetti';
 
 // A játék vége: a győztes érmében, mögötte forgó fénysugarak és konfetti; a három teljesült győzelmi
 // feltétel, a felépült Aranyhegy Szálló elemei és a többiek helyezése. További lépés már nincs.
 export default function Victory({ game, playerId, onLeave }) {
   const portraits = usePortraits();
+  useEffect(() => play('victory'), []); // a győzelmi dallam egyszer, amikor az ablak megnyílik
   const winner = game.players.find((p) => p.id === game.winner_id);
   if (!winner) return null;
   const figure = FIGURES[winner.figure];

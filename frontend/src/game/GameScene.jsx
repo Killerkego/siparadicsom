@@ -85,12 +85,15 @@ export default function GameScene({
   onAckCard,
   canPickCard,
   onPickCard,
+  viewedId,
   onReady,
 }) {
   const [hovered, setHovered] = useState(null);
   const fontsReady = useFontsReady();
   const { action, phase, settled, diceRoll, cardDraw } = timeline;
   const settledMe = settled.players.find((p) => p.id === playerId);
+  // a középen látszó építkezés: a kiválasztott játékosé (alapból a sajátunk)
+  const viewed = settled.players.find((p) => p.id === viewedId) ?? settledMe;
   // a saját csapdák (más csapdáját nem látja senki); a mozgás végén jelennek meg vagy tűnnek el
   const myTraps = Object.entries(settled.traps ?? {}).filter(([, trap]) => trap.owner === playerId);
 
@@ -116,9 +119,10 @@ export default function GameScene({
           onPick={canPickCard ? onPickCard : null}
         />
       </group>
-      {settledMe && (
+      {viewed && (
         <Suspense fallback={null}>
-          <BuildSite buildings={game.buildings} owned={settledMe.buildings} side={side} />
+          {/* játékosváltáskor új építkezés: a már meglévő épületei állnak, nem nőnek ki újra */}
+          <BuildSite key={viewed.id} buildings={game.buildings} owned={viewed.buildings} side={side} />
         </Suspense>
       )}
 

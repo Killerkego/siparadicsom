@@ -34,16 +34,19 @@ function DieTile({ value }) {
   );
 }
 
-// A jobb oldali panel: fejléc (ki következik, utolsó dobás), a legutóbbi esemény és a saját építkezés.
+// A jobb oldali panel: fejléc (ki következik, utolsó dobás), a legutóbbi esemény és a kiválasztott
+// játékos építkezése (alapból a sajátunk; a játékoskártyára kattintva másé, `viewedId`).
 // A fejlécre kattintva összecsukható. A saját döntés a képernyő közepén, a dobás lent, a kilépés fent van.
 // A pénz, a napló és az épületek a mozgás végéig az előző (settled) állapot szerint látszanak.
-export default function GamePanel({ game, settled, playerId, timeline, error }) {
+export default function GamePanel({ game, settled, playerId, timeline, viewedId, onView, error }) {
   const [collapsed, setCollapsed] = useState(() => load(COLLAPSED_KEY, '0') === '1');
   const { action, phase } = timeline;
   const myTurn = game.turn_player_id === playerId;
   const turnPlayer = game.players.find((p) => p.id === game.turn_player_id);
   const me = game.players.find((p) => p.id === playerId);
   const settledMe = settled.players.find((p) => p.id === playerId) ?? me;
+  const viewed = settled.players.find((p) => p.id === viewedId) ?? settledMe;
+  const ownSite = viewed?.id === playerId;
   const pending = phase === 'idle' ? game.pending : null;
   const roller = action && game.players.find((p) => p.id === action.player_id);
   const dice = action?.dice && phase !== 'rolling' ? action.dice : null;
@@ -99,13 +102,19 @@ export default function GamePanel({ game, settled, playerId, timeline, error }) 
         )}
       </section>
 
-      {!collapsed && settledMe && (
+      {!collapsed && viewed && (
         <>
-          <h3 className="panel-section">
-            <span aria-hidden="true">✦</span> Építkezésem <span aria-hidden="true">✦</span>
+          <h3 className="panel-section" style={ownSite ? undefined : { '--player': viewed.color }}>
+            <span aria-hidden="true">✦</span> {ownSite ? 'Építkezésem' : `${viewed.name} építkezése`}{' '}
+            <span aria-hidden="true">✦</span>
           </h3>
+          {!ownSite && (
+            <button className="panel-back" onClick={() => onView(playerId)}>
+              ← Vissza a sajátomhoz
+            </button>
+          )}
           <div className="panel-body">
-            <BuildList buildings={game.buildings} owned={settledMe.buildings} />
+            <BuildList buildings={game.buildings} owned={viewed.buildings} />
           </div>
         </>
       )}
