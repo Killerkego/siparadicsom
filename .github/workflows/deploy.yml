@@ -72,6 +72,28 @@ jobs:
           # a compose ebből tudja, melyik image-et töltse le
           ssh -i ~/.ssh/deploy_key -o BatchMode=yes "$SERVER_USER@$SERVER_IP" "echo IMAGE=$IMAGE > $APP_DIR/.env"
 
+      - name: Docker-hozzáférés ellenőrzése a szerveren
+        env:
+          SERVER_IP: ${{ secrets.SERVER_IP }}
+          SERVER_USER: ${{ secrets.SERVER_USER }}
+        run: |
+          if ! ssh -i ~/.ssh/deploy_key -o BatchMode=yes "$SERVER_USER@$SERVER_IP" "docker info >/dev/null 2>&1"; then
+            echo "::error::A belépő felhasználó nem éri el a Dockert a szerveren."
+            echo "--- Amit a szerver erről a kapcsolatról lát ---"
+            ssh -i ~/.ssh/deploy_key -o BatchMode=yes "$SERVER_USER@$SERVER_IP" 'bash -s' <<'DIAG' || true
+          echo "felhasználó: $(whoami)   csoportok: $(id -Gn)"
+          echo "docker csoport: $(getent group docker)"
+          echo "socket: $(ls -l /var/run/docker.sock 2>&1)"
+          echo "DOCKER_HOST=${DOCKER_HOST:-<nincs>}   docker parancs: $(command -v docker)"
+          docker context ls 2>&1 | head -5
+          docker info 2>&1 | head -3
+          DIAG
+            echo "---"
+            echo "Javítás a szerveren (egyszer): sudo usermod -aG docker $SERVER_USER"
+            echo "Ha a Docker snap-ből van telepítve: sudo groupadd -f docker && sudo usermod -aG docker $SERVER_USER && sudo snap restart docker"
+            exit 1
+          fi
+
       - name: Bejelentkezés a ghcr.io-ra a szerveren (privát image)
         env:
           SERVER_IP: ${{ secrets.SERVER_IP }}
