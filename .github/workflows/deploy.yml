@@ -1,6 +1,7 @@
 # Automatikus telepítés a szerverre (https://zsolt.codes): miután a „Docker image” munkafolyamat sikeresen
 # elkészítette és feltöltötte az új image-et (main ágra történt push után), a GitHub SSH-val belép a szerverre,
 # felmásolja a docker-compose.yml-t, letölti az új image-et, újraindítja a játékot, és ellenőrzi, hogy válaszol-e.
+# A domaint és a HTTPS-t a szerveren futó Nginx Proxy Manager kezeli (proxy host: aranyhegy:8080, közös „proxy” hálózat).
 # Csak a Killerkego/siparadicsom repóban fut (más másolatban nincsenek meg a szerver titkai).
 # A repó privát, ezért az image is privát: a szerver a munkafolyamat ideiglenes GITHUB_TOKEN-jével lép be a
 # ghcr.io-ra a letöltéshez, a végén kilép (külön tokent nem kell a szerveren tárolni).
@@ -38,9 +39,6 @@ jobs:
     timeout-minutes: 10
     env:
       APP_DIR: siparadicsom
-      # a régi telepítés mappája a szerveren: az ottani konténerek (városépítő és a Caddy) foglalják a 80-as és
-      # 443-as portot, ezért a zsolt.codes átvétele előtt leállítjuk őket (az adataik megmaradnak)
-      OLD_APP_DIR: city-building-game
     steps:
       - name: Kód letöltése (a docker-compose.yml miatt)
         uses: actions/checkout@v4
@@ -89,42 +87,44 @@ jobs:
           SERVER_IP: ${{ secrets.SERVER_IP }}
           SERVER_USER: ${{ secrets.SERVER_USER }}
         run: |
-          ssh -i ~/.ssh/deploy_key -o BatchMode=yes "$SERVER_USER@$SERVER_IP" "APP_DIR=$APP_DIR OLD_APP_DIR=$OLD_APP_DIR bash -s" <<'EOF'
+          ssh -i ~/.ssh/deploy_key -o BatchMode=yes "$SERVER_USER@$SERVER_IP" "APP_DIR=$APP_DIR bash -s" <<'EOF'
           set -euo pipefail
           cd ~/"$APP_DIR"
+          # a közös hálózat az NPM-mel (Nginx Proxy Manager); ha már létezik, nem csinál semmit
+          docker network inspect proxy >/dev/null 2>&1 || docker network create proxy
           docker compose pull
-          # a régi telepítés (City Building) leállítása, ha még fut: ő foglalja a 80/443-as portot és a „caddy” nevet
-          if [ -f ~/"$OLD_APP_DIR"/docker-compose.yml ] && [ -n "$(cd ~/"$OLD_APP_DIR" && docker compose ps -q)" ]; then
-            echo "A régi telepítés leállítása: ~/$OLD_APP_DIR"
-            (cd ~/"$OLD_APP_DIR" && docker compose down --remove-orphans)
-          fi
+          # --remove-orphans: a korábbi telepítés Caddy konténerét is eltávolítja, ha még megvan
           if ! docker compose up -d --remove-orphans; then
-            echo "Nem sikerült elindítani. Ha a 80-as vagy 443-as portot más konténer foglalja,"
-            echo "állítsd le és töröld a szerveren: docker rm -f <konténer neve>. A futó konténerek:"
+            echo "Nem sikerült elindítani. A futó konténerek:"
             docker ps --format 'table {{.Names}}\t{{.Image}}\t{{.Ports}}'
             exit 1
           fi
           # a régi, már nem használt image-ek törlése (helytakarékosság)
           docker image prune -f
-          # megvárjuk, amíg a játék és a Caddy válaszol
+          # megvárjuk, amíg a játék egészséges (a Dockerfile HEALTHCHECK-je a /api/games-t kérdezi)
           for i in $(seq 1 30); do
-            if curl -fsS -o /dev/null http://127.0.0.1:8080/api/games && curl -sS -o /dev/null -H "Host: zsolt.codes" http://127.0.0.1/; then
-              echo "A játék és a Caddy fut."; docker compose ps; exit 0
+            if [ "$(docker inspect -f '{{.State.Health.Status}}' aranyhegy 2>/dev/null)" = "healthy" ]; then
+              echo "A játék fut."; docker compose ps
+              # figyelmeztetés, ha az NPM még nincs a közös hálózaton (akkor nem éri el a játékot)
+              if [ "$(docker network inspect proxy -f '{{len .Containers}}')" -lt 2 ]; then
+                echo "::warning::A proxy hálózaton csak az aranyhegy van: kösd rá az NPM konténerét (docker network connect proxy <npm konténer>)."
+              fi
+              exit 0
             fi
             sleep 2
           done
-          echo "A játék vagy a Caddy nem válaszol."; docker compose ps; docker compose logs --tail=50; exit 1
+          echo "A játék nem lett egészséges."; docker compose ps; docker compose logs --tail=50; exit 1
           EOF
 
       - name: Nyilvános elérés ellenőrzése (https://zsolt.codes)
-        # az első indításkor a Caddy pár másodperc alatt kéri le a tanúsítványt; ha ez nem sikerül, csak figyelmeztet
+        # ha az NPM proxy hostja vagy a tanúsítvány még nincs beállítva, csak figyelmeztet
         continue-on-error: true
         run: |
           for i in $(seq 1 12); do
             if curl -fsS -o /dev/null https://zsolt.codes/api/games; then echo "Elérhető: https://zsolt.codes"; exit 0; fi
             sleep 5
           done
-          echo "::warning::A https://zsolt.codes még nem érhető el (tanúsítvány, DNS vagy 443-as port). A szerveren: docker logs caddy"
+          echo "::warning::A https://zsolt.codes még nem érhető el. Ellenőrizd az NPM proxy hostját (aranyhegy:8080, Websockets Support) és hogy az NPM rajta van-e a proxy hálózaton."
           exit 1
 
       - name: Kijelentkezés a ghcr.io-ról a szerveren
