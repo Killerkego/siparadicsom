@@ -1,11 +1,11 @@
 # Futtatás a szerveren Dockerrel (a GitHub által elkészített image-ből):
 #   A GitHub (github.com/Killerkego/siparadicsom) minden main-re feltöltés után elkészíti az image-et, és a
 #   deploy.yml telepíti a szerverre. Kézzel (az image privát, ezért előbb: docker login ghcr.io egy
-#   read:packages jogú tokennel): docker network create proxy; docker compose pull && docker compose up -d
+#   read:packages jogú tokennel): docker compose pull && docker compose up -d
 #
 # A https://zsolt.codes kéréseit a szerveren futó Nginx Proxy Manager (NPM) fogadja a 80-as és 443-as porton,
 # ő kéri a HTTPS-tanúsítványt is, és továbbadja a kéréseket (a WebSocketet is) ennek a konténernek.
-# A játék nem nyit portot a szerveren kívülre: az NPM a közös „proxy” Docker-hálózaton éri el,
+# A játék nem nyit portot a szerveren kívülre: az NPM a saját „nginx-proxy-network” Docker-hálózatán éri el,
 # a konténer nevén és belső portján: aranyhegy:8080
 # Az NPM proxy hostja: Domain Names = zsolt.codes, www.zsolt.codes; Scheme = http; Forward Hostname = aranyhegy;
 # Forward Port = 8080; Websockets Support = BE; SSL: Let's Encrypt, Force SSL.
@@ -16,7 +16,7 @@ services:
     container_name: aranyhegy
     restart: unless-stopped
     networks:
-      - proxy
+      - nginx-proxy-network
     mem_limit: 256m
     cpus: 1.0
     # a konténer semmit sem ír: csak olvasható fájlrendszer, extra jogosultságok nélkül
@@ -32,8 +32,7 @@ services:
         max-file: "3"
 
 networks:
-  # közös hálózat az NPM-mel; a deploy.yml létrehozza, ha még nincs (docker network create proxy),
-  # az NPM konténerét pedig egyszer rá kell kötni (lásd a leírást)
-  proxy:
+  # az NPM hálózata (az NPM compose-fájljában is external); a deploy.yml létrehozza, ha még nincs
+  nginx-proxy-network:
     external: true
-    name: proxy
+    name: nginx-proxy-network
